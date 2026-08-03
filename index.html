@@ -122,9 +122,11 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .dex-slot.owned:hover{transform:translateY(-3px)}
 .dex-slot img{width:100%;height:76%;object-fit:contain;display:block;background:radial-gradient(circle at 50% 40%,rgba(120,200,240,.2),transparent 75%)}
 .dex-info{padding:4px 4px 5px;text-align:center}
-.dex-name{font-size:10px;color:#eee;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dex-tags{font-size:8px;color:#ffd700;font-weight:700;margin-left:2px}
-.dex-slot.owned.shiny{box-shadow:0 0 10px rgba(255,215,0,.5)}
+.dex-name{display:flex;justify-content:center;align-items:baseline;gap:2px;font-size:10px;color:#eee;font-weight:700;white-space:nowrap;overflow:hidden}
+.dex-name .dn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto;min-width:0}
+.dex-tags{font-size:8px;color:#ffd700;font-weight:700;flex-shrink:0}
+.dex-slot.owned.shiny{border:1.5px solid transparent;background:linear-gradient(rgba(255,255,255,.06),rgba(255,255,255,.06)) padding-box,linear-gradient(45deg,#ff004c,#ff9a00,#ffee00,#00d26a,#0090ff,#b200ff,#ff004c) border-box;background-size:100% 100%,400% 400%;animation:rainbow 3s linear infinite;box-shadow:0 0 12px rgba(255,215,0,.45)}
+.dex-shiny-badge{position:absolute;top:4px;right:4px;background:linear-gradient(135deg,#ffd700,#ff8c00);color:#222;font-size:9px;font-weight:800;padding:2px 5px;border-radius:8px;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 .dex-note{text-align:center;color:rgba(255,255,255,.4);font-size:12px;margin-top:18px}
 /* modal */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);z-index:300;display:none;align-items:center;justify-content:center;padding:16px}
@@ -520,7 +522,7 @@ function renderDex(){
       tags.push(`<span class="dex-tags">(${TIER[c.tier].label})</span>`);
       if(have.count>1) tags.push(`<span class="dex-tags">(×${have.count})</span>`);
       if(isShiny) tags.push('<span class="dex-tags">(✨)</span>');
-      slot.innerHTML=`<img src="${c.img}" alt="${c.zh}" loading="lazy"><div class="dex-info"><div class="dex-name">${c.zh}${tags.join('')}</div></div>`;
+      slot.innerHTML=`<img src="${c.img}" alt="${c.zh}" loading="lazy"><div class="dex-info"><div class="dex-name"><span class="dn">${c.zh}</span>${tags.join('')}</div></div>${isShiny?'<span class="dex-shiny-badge">✨閃光</span>':''}`;
       slot.onclick=()=>openModal(c, isShiny);
     }else{
       slot.innerHTML='<span>?</span>';
