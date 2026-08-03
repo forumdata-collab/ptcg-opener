@@ -158,6 +158,12 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .modal-card .card-face{width:100%;height:100%}
 .modal-card .cf-img img{width:100%;height:100%;object-fit:contain}
 .modal-close{position:absolute;top:-46px;right:0;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;width:36px;height:36px;border-radius:50%;font-size:17px;cursor:pointer}
+/* modal 左右導航 */
+.modal-nav{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:16px}
+.modal-nav-btn{background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);color:#fff;width:48px;height:48px;border-radius:50%;font-size:16px;cursor:pointer;transition:all .2s;min-height:44px}
+.modal-nav-btn:active{background:rgba(255,215,0,.3)}
+.modal-nav-btn:disabled{opacity:.25;cursor:default}
+.modal-counter{color:#ffd700;font-weight:800;font-size:14px;min-width:64px;text-align:center}
 /* stats modal */
 .stats-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);z-index:310;display:none;align-items:center;justify-content:center;padding:20px}
 .stats-modal.show{display:flex}
@@ -269,6 +275,7 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
   <div style="position:relative">
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-card" id="modalCard"></div>
+    <div class="modal-nav" id="modalNav"></div>
   </div>
 </div>
 <div class="stats-modal" id="statsModal" onclick="if(event.target===this)closeStats()">
@@ -599,6 +606,10 @@ let dexFilter='all';
 let genFilter=0;      // 0=全部 1/2/3
 let typeFilter='';    // ''=全部
 let searchQ='';
+// 大圖彈窗瀏覽狀態：已收集卡索引
+let modalOwnedList = [];
+let modalIdx = 0;
+let modalTouchX = null;
 const GEN_KEYS = [[0,'全部'],[1,'關都'],[2,'城都'],[3,'豐緣'],[4,'神奧'],[5,'合眾'],[6,'卡洛斯'],[7,'阿羅拉'],[8,'伽勒爾'],[9,'帕底亞']];
 const TYPE_KEYS = [['','全部'],['Grass','草'],['Fire','火'],['Water','水'],['Lightning','雷'],['Psychic','超'],
   ['Fighting','鬥'],['Darkness','惡'],['Metal','鋼'],['Fairy','妖'],['Dragon','龍'],['Colorless','無']];
@@ -670,7 +681,16 @@ function renderDex(){
   document.getElementById('dexFill').style.width = (owned/1025*100)+'%';
 }
 function openModal(c, shiny){
-  // 大圖彈窗：完整 card 結構（card > card-inner > front face）
+  // 建立已收集卡瀏覽清單（按圖鑑順序），定位到目標卡
+  modalOwnedList = CARDS.filter(x => collection[x.id]).map(x => ({c: x, shiny: !!(collection[x.id] && collection[x.id].shiny)}));
+  let found = modalOwnedList.findIndex(o => o.c.id === c.id);
+  modalIdx = found >= 0 ? found : 0;
+  renderModalCard();
+  document.getElementById('modal').classList.add('show');
+}
+function renderModalCard(){
+  if(!modalOwnedList.length){ closeModal(); return; }
+  const {c, shiny} = modalOwnedList[modalIdx];
   const mc = document.getElementById('modalCard');
   mc.innerHTML =
     `<div class="card"><div class="card-inner">${cardHTML({...c, shiny}, 'front')}</div></div>`;
@@ -680,7 +700,48 @@ function openModal(c, shiny){
   const w = Math.min(maxW, maxH * 5 / 7);
   mc.style.width = w + 'px';
   mc.style.height = (w * 7 / 5) + 'px';
-  document.getElementById('modal').classList.add('show');
+  // 瀏覽指示器（有下一張/上一張先顯示）
+  const nav = document.getElementById('modalNav');
+  if(modalOwnedList.length > 1){
+    nav.style.display = 'flex';
+    nav.innerHTML = '';
+    // 左右箭頭
+    const prev = document.createElement('button');
+    prev.className = 'modal-nav-btn'; prev.textContent = '◀';
+    prev.onclick = (e) => { e.stopPropagation(); modalPrev(); };
+    prev.disabled = modalIdx <= 0;
+    const counter = document.createElement('span');
+    counter.className = 'modal-counter';
+    counter.textContent = `${modalIdx + 1} / ${modalOwnedList.length}`;
+    const next = document.createElement('button');
+    next.className = 'modal-nav-btn'; next.textContent = '▶';
+    next.onclick = (e) => { e.stopPropagation(); modalNext(); };
+    next.disabled = modalIdx >= modalOwnedList.length - 1;
+    nav.appendChild(prev); nav.appendChild(counter); nav.appendChild(next);
+  } else {
+    nav.style.display = 'none';
+    nav.innerHTML = '';
+  }
+}
+function modalPrev(){
+  if(modalIdx > 0){ modalIdx--; renderModalCard(); }
+}
+function modalNext(){
+  if(modalIdx < modalOwnedList.length - 1){ modalIdx++; renderModalCard(); }
+}
+// 左右掃切換
+function initModalSwipe(){
+  const modal = document.getElementById('modal');
+  modal.addEventListener('touchstart', (e) => { modalTouchX = e.touches[0].clientX; }, {passive:true});
+  modal.addEventListener('touchmove', (e) => { if(e.cancelable) e.preventDefault(); }, {passive:false});
+  modal.addEventListener('touchend', (e) => {
+    if(modalTouchX === null) return;
+    const dx = e.changedTouches[0].clientX - modalTouchX;
+    modalTouchX = null;
+    if(Math.abs(dx) < 60) return;   // 唔夠橫 → 唔切
+    if(dx < 0) modalNext();         // 向左掃 → 下一張
+    else modalPrev();               // 向右掃 → 上一張
+  });
 }
 function closeModal(){ document.getElementById('modal').classList.remove('show'); }
 
@@ -833,6 +894,7 @@ function closeTutorial(){
 loadState();
 initFilters();
 initSwipe();
+initModalSwipe();
 updateStats();
 // PWA: service worker 離線快取
 if('serviceWorker' in navigator && location.protocol==='https:'){
