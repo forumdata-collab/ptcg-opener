@@ -120,20 +120,21 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .dex-slot{aspect-ratio:2/3;border-radius:10px;overflow:hidden;position:relative;background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.18);font-size:13px;cursor:default}
 .dex-slot.owned{border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);cursor:pointer;transition:transform .2s}
 .dex-slot.owned:hover{transform:translateY(-3px)}
-.dex-slot img{width:100%;height:72%;object-fit:contain;display:block;background:radial-gradient(circle at 50% 40%,rgba(120,200,240,.2),transparent 75%)}
-.dex-info{padding:5px 4px;text-align:center}
+.dex-slot img{width:100%;height:76%;object-fit:contain;display:block;background:radial-gradient(circle at 50% 40%,rgba(120,200,240,.2),transparent 75%)}
+.dex-info{padding:4px 4px 5px;text-align:center}
 .dex-name{font-size:10px;color:#eee;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dex-rar{font-size:8px;margin-top:2px;color:#ffd700}
+.dex-tags{font-size:8px;color:#ffd700;font-weight:700;margin-left:2px}
 .dex-slot.owned.shiny{box-shadow:0 0 10px rgba(255,215,0,.5)}
 .dex-note{text-align:center;color:rgba(255,255,255,.4);font-size:12px;margin-top:18px}
 /* modal */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);z-index:300;display:none;align-items:center;justify-content:center;padding:16px}
 .modal.show{display:flex}
-.modal-card{width:270px;height:378px;position:relative;transform-style:preserve-3d}
+.modal-card{width:min(88vw, 440px);max-height:calc(92vh - 60px);aspect-ratio:5/7;position:relative;transform-style:preserve-3d}
 .modal-card .card-inner{transform:rotateY(180deg);width:100%;height:100%}
 .modal-card .card{width:100%;height:100%;opacity:1;animation:none}
 .modal-card .card-face{width:100%;height:100%}
-.modal-close{position:absolute;top:-44px;right:0;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;width:34px;height:34px;border-radius:50%;font-size:17px;cursor:pointer}
+.modal-card .cf-img img{width:100%;height:100%;object-fit:contain}
+.modal-close{position:absolute;top:-46px;right:0;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;width:36px;height:36px;border-radius:50%;font-size:17px;cursor:pointer}
 /* celebration */
 .celebrate{position:fixed;inset:0;pointer-events:none;z-index:400;overflow:hidden}
 .particle{position:absolute;width:8px;height:8px;border-radius:50%;animation:confetti 2.2s ease-out forwards}
@@ -515,8 +516,11 @@ function renderDex(){
     const isShiny = have && have.shiny;
     slot.className='dex-slot'+(have?' owned':'')+(isShiny?' shiny':'');
     if(have){
-      const tclass = c.tier===3?'t3':(c.tier===2?'t2':(c.tier===1?'t1':'t0'));
-      slot.innerHTML=`<img src="${c.img}" alt="${c.zh}" loading="lazy"><div class="dex-info"><div class="dex-name">${c.zh}${have.count>1?' ×'+have.count:''}${isShiny?' ✨':''}</div><div class="dex-rar">${TIER[c.tier].label}</div></div>`;
+      const tags = [];
+      tags.push(`<span class="dex-tags">(${TIER[c.tier].label})</span>`);
+      if(have.count>1) tags.push(`<span class="dex-tags">(×${have.count})</span>`);
+      if(isShiny) tags.push('<span class="dex-tags">(✨)</span>');
+      slot.innerHTML=`<img src="${c.img}" alt="${c.zh}" loading="lazy"><div class="dex-info"><div class="dex-name">${c.zh}${tags.join('')}</div></div>`;
       slot.onclick=()=>openModal(c, isShiny);
     }else{
       slot.innerHTML='<span>?</span>';
@@ -528,8 +532,15 @@ function renderDex(){
 }
 function openModal(c, shiny){
   // 大圖彈窗：完整 card 結構（card > card-inner > front face）
-  document.getElementById('modalCard').innerHTML =
+  const mc = document.getElementById('modalCard');
+  mc.innerHTML =
     `<div class="card"><div class="card-inner">${cardHTML({...c, shiny}, 'front')}</div></div>`;
+  // 放到最大：佔屏幕 88% 寬 / 92% 高，維持 5:7 卡比例
+  const maxW = Math.min(window.innerWidth * 0.88, 440);
+  const maxH = window.innerHeight * 0.92 - 60;
+  const w = Math.min(maxW, maxH * 5 / 7);
+  mc.style.width = w + 'px';
+  mc.style.height = (w * 7 / 5) + 'px';
   document.getElementById('modal').classList.add('show');
 }
 function closeModal(){ document.getElementById('modal').classList.remove('show'); }
