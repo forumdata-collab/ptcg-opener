@@ -117,11 +117,11 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .f-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#bbb;padding:5px 12px;border-radius:16px;font-size:11.5px;font-weight:700;cursor:pointer;transition:all .2s}
 .f-btn.active{background:linear-gradient(135deg,#e3350d,#c41e3a);border-color:#e3350d;color:#fff}
 .dex-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.dex-slot{aspect-ratio:2/3;border-radius:10px;overflow:hidden;position:relative;background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.18);font-size:13px;cursor:default}
+.dex-slot{aspect-ratio:2/3;border-radius:10px;overflow:hidden;position:relative;background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.18);font-size:13px;cursor:default}
 .dex-slot.owned{border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);cursor:pointer;transition:transform .2s}
 .dex-slot.owned:hover{transform:translateY(-3px)}
-.dex-slot img{width:100%;height:76%;object-fit:contain;display:block;background:radial-gradient(circle at 50% 40%,rgba(120,200,240,.2),transparent 75%)}
-.dex-info{padding:4px 4px 5px;text-align:center}
+.dex-slot img{width:100%;flex:1;min-height:0;object-fit:contain;display:block;background:radial-gradient(circle at 50% 40%,rgba(120,200,240,.2),transparent 75%)}
+.dex-info{padding:4px 4px 5px;text-align:center;width:100%;flex-shrink:0}
 .dex-name{display:flex;justify-content:center;align-items:baseline;gap:2px;font-size:10px;color:#eee;font-weight:700;white-space:nowrap;overflow:hidden}
 .dex-name .dn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 1 auto;min-width:0}
 .dex-tags{font-size:8px;color:#ffd700;font-weight:700;flex-shrink:0}
