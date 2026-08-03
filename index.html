@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>寶可夢 TCG 抽卡機</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d1e 100%);color:#fff;overflow-x:hidden;min-height:100vh;touch-action:manipulation}
+.app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:40px}
+/* header */
+.header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:rgba(0,0,0,.35);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,.08)}
+.header h1{font-size:17px;font-weight:800;background:linear-gradient(90deg,#ffd700,#ff8c00);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:1px}
+.nav{display:flex;gap:8px}
+.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#ddd;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;transition:all .25s}
+.nav-btn.active{background:linear-gradient(135deg,#e3350d,#c41e3a);border-color:#e3350d;color:#fff;box-shadow:0 4px 14px rgba(227,53,13,.4)}
+/* pack page */
+.pack-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 140px);padding:24px 20px;position:relative}
+.stats-row{display:flex;gap:14px;margin-bottom:36px;font-size:13px;color:rgba(255,255,255,.75)}
+.stats-row b{color:#ffd700;font-size:15px}
+.pack-wrap{position:relative;width:260px;height:360px}
+.pack{width:100%;height:100%;position:relative;cursor:grab;user-select:none;touch-action:none;transition:transform .08s;transform-style:preserve-3d}
+.pack:active{cursor:grabbing}
+.pack-body{position:absolute;inset:0;border-radius:18px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.6),0 0 0 4px rgba(255,255,255,.08),inset 0 2px 0 rgba(255,255,255,.25);will-change:transform}
+.pack-top,.pack-half{position:absolute;left:0;right:0;height:50%;overflow:hidden}
+.pack-top{top:0;background:linear-gradient(160deg,#ff5a2e 0%,#e3350d 45%,#b01030 100%)}
+.pack-top::after{content:'';position:absolute;top:-40%;left:-20%;width:80%;height:120%;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.28) 50%,transparent 70%);transform:rotate(10deg)}
+.pack-bottom{top:50%;background:linear-gradient(160deg,#ffffff 0%,#f0f0f2 60%,#d8d8dc 100%)}
+.pack-ball{position:absolute;left:50%;top:50%;width:96px;height:96px;transform:translate(-50%,-50%);z-index:5;filter:drop-shadow(0 6px 12px rgba(0,0,0,.35))}
+.pack-ball .b-top{position:absolute;top:0;left:0;right:0;height:48px;background:#e3350d;border:3px solid #1a1a2e;border-bottom:none;border-radius:48px 48px 0 0}
+.pack-ball .b-mid{position:absolute;top:45px;left:0;right:0;height:6px;background:#1a1a2e}
+.pack-ball .b-bottom{position:absolute;bottom:0;left:0;right:0;height:42px;background:#fff;border:3px solid #1a1a2e;border-top:none;border-radius:0 0 48px 48px}
+.pack-ball .b-btn{position:absolute;left:50%;top:50%;width:26px;height:26px;transform:translate(-50%,-50%);background:#fff;border:3px solid #1a1a2e;border-radius:50%;z-index:2}
+.pack-ball .b-btn::after{content:'';position:absolute;left:50%;top:50%;width:11px;height:11px;transform:translate(-50%,-50%);background:#1a1a2e;border-radius:50%}
+.pack-label{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:#1a1a2e;font-weight:800;font-size:15px;letter-spacing:3px;z-index:6}
+.pack-label span{color:#e3350d}
+/* pack tear halves */
+.half-left,.half-right{position:absolute;top:0;bottom:0;width:50%;overflow:hidden;pointer-events:none;opacity:0;will-change:transform,opacity}
+.half-left{left:0;border-radius:18px 0 0 18px}
+.half-right{right:0;border-radius:0 18px 18px 0}
+.tearing .half-left{animation:tearL .55s cubic-bezier(.5,.05,.7,.4) forwards}
+.tearing .half-right{animation:tearR .55s cubic-bezier(.5,.05,.7,.4) forwards}
+@keyframes tearL{to{transform:translateX(-140%) rotate(-18deg);opacity:0}}
+@keyframes tearR{to{transform:translateX(140%) rotate(18deg);opacity:0}}
+.burst{position:absolute;left:50%;top:50%;width:340px;height:340px;transform:translate(-50%,-50%) scale(0);background:radial-gradient(circle,rgba(255,215,0,.85) 0%,rgba(255,140,0,.5) 35%,transparent 70%);border-radius:50%;pointer-events:none;opacity:0;z-index:3}
+.burst.on{animation:burstOut .9s ease-out forwards}
+@keyframes burstOut{0%{transform:translate(-50%,-50%) scale(0);opacity:1}70%{opacity:.9}100%{transform:translate(-50%,-50%) scale(3.2);opacity:0}}
+.swipe-hint{margin-top:34px;color:rgba(255,255,255,.55);font-size:15px;display:flex;align-items:center;gap:10px;animation:hintPulse 1.8s ease-in-out infinite}
+@keyframes hintPulse{0%,100%{opacity:.55;transform:translateX(0)}50%{opacity:1;transform:translateX(12px)}}
+.trail{position:absolute;top:50%;height:5px;border-radius:3px;background:linear-gradient(90deg,transparent,#ffd700,transparent);opacity:0;pointer-events:none;width:200px;transform:translate(-50%,-50%)}
+/* cards result */
+.result{display:none;min-height:calc(100vh - 90px);flex-direction:column;align-items:center;padding:30px 14px 20px}
+.result.show{display:flex}
+.cards-row{display:flex;justify-content:center;align-items:flex-end;gap:10px;flex-wrap:wrap;max-width:480px;margin-bottom:26px}
+.card{width:150px;height:210px;perspective:900px;cursor:pointer;flex-shrink:0;opacity:0}
+.card.pop{animation:cardPop .55s cubic-bezier(.2,1.2,.3,1) forwards}
+@keyframes cardPop{0%{transform:scale(.3) translateY(120px);opacity:0}60%{transform:scale(1.08) translateY(-16px);opacity:1}100%{transform:scale(1) translateY(0);opacity:1}}
+.card-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,0,.2,1)}
+.card.flipped .card-inner{transform:rotateY(180deg)}
+.card-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;overflow:hidden}
+/* back */
+.card-back{background:linear-gradient(140deg,#1e3a8a,#3b82f6);display:flex;align-items:center;justify-content:center;border:3px solid #ffd700}
+.card-back .cb-ball{width:56px;height:56px;position:relative;opacity:.9}
+.card-back .cb-ball::before{content:'';position:absolute;inset:0;border:4px solid rgba(255,255,255,.35);border-radius:50%}
+.card-back .cb-ball::after{content:'';position:absolute;top:50%;left:0;right:0;height:2px;background:rgba(255,255,255,.35)}
+.card-back .cb-dot{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:16px;height:16px;border:3px solid rgba(255,255,255,.35);border-radius:50%}
+.card-back .cb-txt{position:absolute;bottom:14px;left:0;right:0;text-align:center;font-size:9px;letter-spacing:2px;color:rgba(255,255,255,.6);font-weight:700}
+/* front */
+.card-front{transform:rotateY(180deg);background:linear-gradient(150deg,#fdfcf7,#efece2);border:3px solid #b0b0b0;display:flex;flex-direction:column;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.card-front.t0{border-color:#b9b9b9}
+.card-front.t1{border-color:#cd7f32;box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 12px rgba(205,127,50,.25)}
+.card-front.t2{border-color:#ffd700;box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 16px rgba(255,215,0,.4)}
+.card-front.t3{border-color:#a855f7;box-shadow:0 10px 30px rgba(0,0,0,.45),0 0 22px rgba(168,85,247,.55)}
+.card-front.shiny{border:3px solid transparent;background:linear-gradient(150deg,#fdfcf7,#efece2) padding-box,linear-gradient(45deg,#ff004c,#ff9a00,#ffee00,#00d26a,#0090ff,#b200ff,#ff004c) border-box;background-size:100% 100%,400% 400%;animation:rainbow 3s linear infinite}
+@keyframes rainbow{0%{background-position:0 0,0 50%}100%{background-position:0 0,400% 50%}}
+.cf-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px}
+.cf-name{font-size:13px;font-weight:800;color:#222;line-height:1.15}
+.cf-name small{display:block;font-size:7.5px;color:#888;font-weight:600}
+.cf-hp{font-size:11px;font-weight:800;color:#e3350d}
+.cf-img{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,rgba(120,200,240,.25),rgba(0,0,0,.04));border-radius:8px;margin:2px 0;overflow:hidden}
+.cf-img img{max-width:100%;max-height:100%;object-fit:contain}
+.cf-types{display:flex;gap:3px;margin-bottom:3px;min-height:14px}
+.type-tag{font-size:8px;padding:1px 6px;border-radius:8px;color:#fff;font-weight:700;letter-spacing:.5px}
+.cf-foot{display:flex;justify-content:space-between;align-items:center}
+.cf-set{font-size:6.5px;color:#999;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rarity-badge{font-size:8px;font-weight:800;padding:1px 6px;border-radius:4px;color:#fff}
+.rarity-badge.t0{background:#9e9e9e}
+.rarity-badge.t1{background:#cd7f32}
+.rarity-badge.t2{background:#d4a500;color:#222}
+.rarity-badge.t3{background:linear-gradient(135deg,#a855f7,#6d28d9)}
+.rarity-badge.shiny{background:linear-gradient(45deg,#ff004c,#ff9a00,#ffee00,#00d26a,#0090ff);color:#fff}
+/* sparkle overlay for shiny */
+.sparkle{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:10px;opacity:.9}
+.sparkle i{position:absolute;display:block;color:#ffd700;font-style:normal;font-size:13px;animation:spk 1.6s infinite}
+.sparkle i:nth-child(1){top:12%;left:14%;animation-delay:0s}
+.sparkle i:nth-child(2){top:70%;left:78%;animation-delay:.4s;font-size:10px}
+.sparkle i:nth-child(3){top:38%;left:60%;animation-delay:.8s;font-size:11px}
+.sparkle i:nth-child(4){top:80%;left:20%;animation-delay:1.1s;font-size:9px}
+@keyframes spk{0%,100%{opacity:0;transform:scale(.4) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(20deg)}}
+/* buttons */
+.btn-primary{background:linear-gradient(135deg,#ff5a2e,#c41e3a);color:#fff;border:none;padding:13px 34px;border-radius:28px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(227,53,13,.45);transition:all .25s;letter-spacing:1px}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(227,53,13,.6)}
+.btn-primary:active{transform:translateY(0)}
+.btn-ghost{background:rgba(255,255,255,.08);color:#ccc;border:1px solid rgba(255,255,255,.18);padding:10px 22px;border-radius:24px;font-size:13px;font-weight:700;cursor:pointer}
+.result-actions{display:flex;gap:12px;margin-top:6px}
+/* dex page */
+.dex-page{display:none;padding:18px 16px;min-height:calc(100vh - 90px)}
+.dex-page.show{display:block}
+.progress-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px;margin-bottom:16px}
+.progress-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px}
+.progress-head b{color:#ffd700}
+.progress-bar{height:10px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,#ffd700,#ff8c00);border-radius:6px;transition:width .5s ease;width:0}
+.filter-row{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.f-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#bbb;padding:5px 12px;border-radius:16px;font-size:11.5px;font-weight:700;cursor:pointer;transition:all .2s}
+.f-btn.active{background:linear-gradient(135deg,#e3350d,#c41e3a);border-color:#e3350d;color:#fff}
+.dex-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.dex-slot{aspect-ratio:2/3;border-radius:10px;overflow:hidden;position:relative;background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.18);font-size:13px;cursor:default}
+.dex-slot.owned{border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);cursor:pointer;transition:transform .2s}
+.dex-slot.owned:hover{transform:translateY(-3px)}
+.dex-slot img{width:100%;height:72%;object-fit:contain;display:block;background:radial-gradient(circle at 50% 40%,rgba(120,200,240,.2),transparent 75%)}
+.dex-info{padding:5px 4px;text-align:center}
+.dex-name{font-size:10px;color:#eee;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dex-rar{font-size:8px;margin-top:2px;color:#ffd700}
+.dex-slot.owned.shiny{box-shadow:0 0 10px rgba(255,215,0,.5)}
+.dex-note{text-align:center;color:rgba(255,255,255,.4);font-size:12px;margin-top:18px}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);z-index:300;display:none;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}
+.modal-card{width:260px;height:364px;position:relative;transform-style:preserve-3d}
+.modal-card .card-inner{transform:rotateY(180deg)}
+.modal-card .card{width:100%;height:100%;opacity:1;animation:none}
+.modal-close{position:absolute;top:-44px;right:0;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;width:34px;height:34px;border-radius:50%;font-size:17px;cursor:pointer}
+/* celebration */
+.celebrate{position:fixed;inset:0;pointer-events:none;z-index:400;overflow:hidden}
+.particle{position:absolute;width:8px;height:8px;border-radius:50%;animation:confetti 2.2s ease-out forwards}
+@keyframes confetti{0%{transform:translateY(-20px) rotate(0);opacity:1}100%{transform:translateY(105vh) rotate(720deg);opacity:0}}
+/* tutorial */
+.tutorial{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;display:none;align-items:center;justify-content:center;padding:30px}
+.tutorial.show{display:flex}
+.tut-box{background:#1c1c36;border:1px solid rgba(255,255,255,.15);border-radius:18px;padding:26px 24px;max-width:340px;text-align:center}
+.tut-box h2{color:#ffd700;font-size:19px;margin-bottom:12px}
+.tut-box p{color:#bbb;font-size:14px;line-height:1.7;margin-bottom:8px}
+.tut-box .tut-swipe{font-size:38px;margin:8px 0}
+/* utility */
+.muted{color:rgba(255,255,255,.4)}
+footer.app-footer{text-align:center;padding:20px 20px 26px;margin-top:8px}
+footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bottom:14px;line-height:1.7}
+.kofi-bar{text-align:center}
+.kofi-btn{display:inline-flex;align-items:center;gap:10px;padding:11px 26px;background:#ff5e5b;color:#fff !important;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1>⚡ 寶可夢 TCG 抽卡機</h1>
+    <div class="nav">
+      <button class="nav-btn active" id="navPack" onclick="showView('pack')">抽卡</button>
+      <button class="nav-btn" id="navDex" onclick="showView('dex')">圖鑑</button>
+    </div>
+  </div>
+
+  <!-- PACK PAGE -->
+  <div class="pack-page" id="viewPack">
+    <div class="stats-row"><span>已開 <b id="statPacks">0</b> 包</span><span>收集 <b id="statColl">0</b>/151</span></div>
+    <div class="pack-wrap" id="packWrap">
+      <div class="burst" id="burst"></div>
+      <div class="pack" id="pack">
+        <div class="pack-body" id="packBody">
+          <div class="pack-top"></div>
+          <div class="pack-bottom"></div>
+          <div class="pack-ball">
+            <div class="b-top"></div><div class="b-mid"></div><div class="b-bottom"></div><div class="b-btn"></div>
+          </div>
+          <div class="pack-label">POKÉMON <span>TCG</span></div>
+          <div class="half-left" id="halfL"></div>
+          <div class="half-right" id="halfR"></div>
+        </div>
+      </div>
+      <div class="trail" id="trail"></div>
+    </div>
+    <div class="swipe-hint" id="swipeHint">👆 橫掃卡包開啟</div>
+  </div>
+
+  <!-- RESULT -->
+  <div class="result" id="viewResult">
+    <div class="cards-row" id="cardsRow"></div>
+    <div class="result-actions">
+      <button class="btn-ghost" onclick="showView('dex')">睇圖鑑</button>
+      <button class="btn-primary" onclick="openPack()">再開一包</button>
+    </div>
+  </div>
+
+  <!-- DEX PAGE -->
+  <div class="dex-page" id="viewDex">
+    <div class="progress-card">
+      <div class="progress-head"><span>圖鑑收集進度</span><b id="dexCount">0 / 151</b></div>
+      <div class="progress-bar"><div class="progress-fill" id="dexFill"></div></div>
+    </div>
+    <div class="filter-row" id="filterRow"></div>
+    <div class="dex-grid" id="dexGrid"></div>
+    <div class="dex-note">收集全部 151 隻初代寶可夢！閃光版唔另計進度</div>
+  </div>
+</div>
+
+<footer class="app-footer">
+  <p class="credit">卡圖來源：PTCG-database（寶可夢官方繁中卡圖）· 教育及個人娛樂用途<br>寶可夢為任天堂／Creatures／GAME FREAK 商標</p>
+  <div class="kofi-bar">
+    <a class="kofi-btn" href="https://ko-fi.com/forumdata" target="_blank">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M23.881 8.948c-.773-4.085-4.859-4.593-4.859-4.593H.723c-.604 0-.679.798-.679.798s-.082 7.324-.022 11.822c.164 2.424 2.586 2.672 2.586 2.672s8.267-.023 11.966-.049c2.438-.426 2.683-2.566 2.658-3.734 4.47.06 8.529-1.723 8.649-4.916zm-11.638 8.978c-2.252 0-4.078-1.826-4.078-4.078s1.826-4.078 4.078-4.078 4.078 1.826 4.078 4.078-4.078z"/></svg>
+      ☕ 請我飲杯咖啡
+    </a>
+  </div>
+</footer>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+  <div style="position:relative">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-card" id="modalCard"></div>
+  </div>
+</div>
+<div class="celebrate" id="celebrate"></div>
+<div class="tutorial" id="tutorial">
+  <div class="tut-box">
+    <h2>🎮 玩法說明</h2>
+    <div class="tut-swipe">👆➡️</div>
+    <p>喺卡包上向左橫掃，模擬撕開卡包！</p>
+    <p>每包有 <b style="color:#ffd700">5 張卡</b>，稀有度由低到高遞增。</p>
+    <p>點擊卡片可以<b style="color:#ffd700">翻面</b>睇 HP、招式同稀有度。</p>
+    <p>收集卡片入圖鑑，齊 151 隻就完成！</p>
+    <button class="btn-primary" style="margin-top:14px" onclick="closeTutorial()">開始抽卡！</button>
+  </div>
+</div>
+
+<script>
+// ===== CARD DATA (embedded) =====
+const CARDS = [{"id":1,"zh":"妙蛙種子","img":"https://asia.pokemon-card.com/tw/card-img/tw00006534.png","set":"強化擴充包「Pokémon GO」","num":"001","hp":"70","types":["Grass"],"stage":"基礎","attacks":[{"name":"藤鞭","damage":"10"},{"name":"飛葉快刀","damage":"20"}],"tier":0},{"id":2,"zh":"妙蛙草","img":"https://asia.pokemon-card.com/tw/card-img/tw00006535.png","set":"強化擴充包「Pokémon GO」","num":"002","hp":"100","types":["Grass"],"stage":"1階進化","attacks":[{"name":"招集芳香","damage":""},{"name":"飛葉快刀","damage":"60"}],"tier":1},{"id":3,"zh":"妙蛙花VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00001527.png","set":"V起始牌組 「挑戰」","num":"002","hp":"330","types":["Grass"],"stage":"其他","attacks":[{"name":"森林風暴","damage":"30×"},{"name":"超極巨花團錦簇","damage":"210"}],"tier":2},{"id":4,"zh":"小火龍","img":"https://asia.pokemon-card.com/tw/card-img/tw00006541.png","set":"強化擴充包「Pokémon GO」","num":"008","hp":"60","types":["Fire"],"stage":"基礎","attacks":[{"name":"燃燒之尾","damage":"10"},{"name":"","damage":""}],"tier":0},{"id":5,"zh":"火恐龍","img":"https://asia.pokemon-card.com/tw/card-img/tw00006542.png","set":"強化擴充包「Pokémon GO」","num":"009","hp":"90","types":["Fire"],"stage":"1階進化","attacks":[{"name":"抓","damage":"30"},{"name":"噴射火焰","damage":"100"}],"tier":1},{"id":6,"zh":"噴火龍VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00001093.png","set":"擴充包「無極力量」SET B","num":"004","hp":"330","types":["Fire"],"stage":"其他","attacks":[{"name":"利爪劈擊","damage":"100"},{"name":"超極巨地獄滅焰","damage":"300"}],"tier":2},{"id":7,"zh":"傑尼龜","img":"https://asia.pokemon-card.com/tw/card-img/tw00006548.png","set":"強化擴充包「Pokémon GO」","num":"015","hp":"70","types":["Water"],"stage":"基礎","attacks":[{"name":"水槍","damage":"20"},{"name":"","damage":""}],"tier":0},{"id":8,"zh":"卡咪龜","img":"https://asia.pokemon-card.com/tw/card-img/tw00006549.png","set":"強化擴充包「Pokémon GO」","num":"016","hp":"90","types":["Water"],"stage":"1階進化","attacks":[{"name":"水槍","damage":"30"},{"name":"水炮","damage":"50+"}],"tier":1},{"id":9,"zh":"水箭龜VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00001554.png","set":"V起始牌組 「挑戰」","num":"029","hp":"330","types":["Water"],"stage":"其他","attacks":[{"name":"絢麗墜落","damage":"120"},{"name":"超極巨轟天裂水","damage":"220"}],"tier":2},{"id":10,"zh":"綠毛蟲","img":"https://asia.pokemon-card.com/tw/card-img/tw00008295.png","set":"強化擴充包「寶可夢卡牌151」","num":"172","hp":"50","types":["Grass"],"stage":"基礎","attacks":[{"name":"吃葉子","damage":"10+"},{"name":"","damage":""}],"tier":0},{"id":11,"zh":"鐵甲蛹","img":"https://asia.pokemon-card.com/tw/card-img/tw00008134.png","set":"強化擴充包「寶可夢卡牌151」","num":"011","hp":"90","types":["Grass"],"stage":"1階進化","attacks":[{"name":"撞擊","damage":"20"},{"name":"防禦姿勢","damage":""}],"tier":0},{"id":12,"zh":"巴大蝶VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00000947.png","set":"擴充包「無極力量」SET A","num":"003","hp":"300","types":["Grass"],"stage":"其他","attacks":[{"name":"超極巨毒起雲湧","damage":"150"}],"tier":1},{"id":13,"zh":"獨角蟲","img":"https://asia.pokemon-card.com/tw/card-img/tw00008136.png","set":"強化擴充包「寶可夢卡牌151」","num":"013","hp":"50","types":["Grass"],"stage":"基礎","attacks":[{"name":"衝撞","damage":"10"},{"name":"蟲咬","damage":"20"}],"tier":0},{"id":14,"zh":"鐵殼蛹","img":"https://asia.pokemon-card.com/tw/card-img/tw00000951.png","set":"擴充包「無極力量」SET A","num":"007","hp":"80","types":["Grass"],"stage":"1階進化","attacks":[{"name":"蟲咬","damage":"30"},{"name":"","damage":""}],"tier":0},{"id":15,"zh":"大針蜂","img":"https://asia.pokemon-card.com/tw/card-img/tw00005194.png","set":"高級擴充包「VMAX絕群壓軸」","num":"003","hp":"130","types":["Grass"],"stage":"2階進化","attacks":[{"name":"對點針刺","damage":""},{"name":"噴射尖槍","damage":"110"}],"tier":1},{"id":16,"zh":"波波","img":"https://asia.pokemon-card.com/tw/card-img/tw00008139.png","set":"強化擴充包「寶可夢卡牌151」","num":"016","hp":"50","types":["Colorless"],"stage":"基礎","attacks":[{"name":"呼朋引伴","damage":""},{"name":"撞擊","damage":"20"}],"tier":0},{"id":17,"zh":"比比鳥","img":"https://asia.pokemon-card.com/tw/card-img/tw00008140.png","set":"強化擴充包「寶可夢卡牌151」","num":"017","hp":"80","types":["Colorless"],"stage":"1階進化","attacks":[{"name":"羽擊","damage":"20"},{"name":"","damage":""}],"tier":1},{"id":18,"zh":"大比鳥ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00009167.png","set":"高級擴充包「閃色寶藏ex」","num":"139","hp":"280","types":["Colorless"],"stage":"2階進化","attacks":[{"name":"狂風呼嘯","damage":"120"}],"tier":1},{"id":19,"zh":"阿羅拉 小拉達","img":"https://asia.pokemon-card.com/tw/card-img/tw00006574.png","set":"強化擴充包「Pokémon GO」","num":"041","hp":"40","types":["Darkness"],"stage":"基礎","attacks":[{"name":"必殺門牙","damage":"50"},{"name":"","damage":""}],"tier":0},{"id":20,"zh":"阿羅拉 拉達GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00004545.png","set":"擴充包「美夢成真組合篇」SET A","num":"104","hp":"200","types":["Darkness"],"stage":"1階進化","attacks":[{"name":"亂丟","damage":"40×"},{"name":"必殺門牙","damage":"150"}],"tier":1},{"id":21,"zh":"烈雀","img":"https://asia.pokemon-card.com/tw/card-img/tw00002863.png","set":"擴充包「雙倍爆擊」SET A","num":"124","hp":"60","types":["Colorless"],"stage":"基礎","attacks":[{"name":"滑翔","damage":"10"},{"name":"高速飛行","damage":"20"}],"tier":0},{"id":22,"zh":"大嘴雀","img":"https://asia.pokemon-card.com/tw/card-img/tw00004241.png","set":"擴充包「眾星雲集組合篇」SET B","num":"115","hp":"90","types":["Colorless"],"stage":"1階進化","attacks":[{"name":"揚風","damage":""},{"name":"猛擊在地","damage":"60"}],"tier":1},{"id":23,"zh":"阿柏蛇","img":"https://asia.pokemon-card.com/tw/card-img/tw00008146.png","set":"強化擴充包「寶可夢卡牌151」","num":"023","hp":"70","types":["Darkness"],"stage":"基礎","attacks":[{"name":"酸液炸彈","damage":"30"},{"name":"","damage":""}],"tier":0},{"id":24,"zh":"阿柏怪ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00008147.png","set":"強化擴充包「寶可夢卡牌151」","num":"024","hp":"270","types":["Darkness"],"stage":"1階進化","attacks":[{"name":"束縛","damage":"70"},{"name":"脅迫獠牙","damage":"150"}],"tier":1},{"id":25,"zh":"皮卡丘VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00007037.png","set":"特典卡 劍&盾","num":"202","hp":"310","types":["Lightning"],"stage":"其他","attacks":[{"name":"充電尾","damage":"30"},{"name":"超極巨雷霆萬鈞","damage":"250"}],"tier":2},{"id":26,"zh":"雷丘GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00004018.png","set":"擴充包「眾星雲集組合篇」SET A","num":"050","hp":"210","types":["Lightning"],"stage":"1階進化","attacks":[{"name":"強力電光","damage":"20+"},{"name":"打雷","damage":"160"}],"tier":2},{"id":27,"zh":"阿羅拉 穿山鼠","img":"https://asia.pokemon-card.com/tw/card-img/tw00004128.png","set":"擴充包「眾星雲集組合篇」SET B","num":"002","hp":"60","types":["Water"],"stage":"基礎","attacks":[{"name":"變圓","damage":""},{"name":"冰球","damage":"30"}],"tier":0},{"id":28,"zh":"阿羅拉 穿山王GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00003267.png","set":"擴充包「傳說交鋒」SET B","num":"026","hp":"200","types":["Water"],"stage":"1階進化","attacks":[{"name":"冰息","damage":"120"},{"name":"尖刺風暴GX","damage":""}],"tier":1},{"id":29,"zh":"尼多蘭","img":"https://asia.pokemon-card.com/tw/card-img/tw00008152.png","set":"強化擴充包「寶可夢卡牌151」","num":"029","hp":"60","types":["Darkness"],"stage":"基礎","attacks":[{"name":"毒角","damage":"20"},{"name":"","damage":""}],"tier":0},{"id":30,"zh":"尼多娜","img":"https://asia.pokemon-card.com/tw/card-img/tw00008153.png","set":"強化擴充包「寶可夢卡牌151」","num":"030","hp":"90","types":["Darkness"],"stage":"1階進化","attacks":[{"name":"家族呼喚","damage":""},{"name":"銳利之牙","damage":"50"}],"tier":1},{"id":31,"zh":"尼多后","img":"https://asia.pokemon-card.com/tw/card-img/tw00008154.png","set":"強化擴充包「寶可夢卡牌151」","num":"031","hp":"170","types":["Darkness"],"stage":"2階進化","attacks":[{"name":"皇后壓制","damage":"90"},{"name":"撞倒","damage":"160"}],"tier":2},{"id":32,"zh":"尼多朗","img":"https://asia.pokemon-card.com/tw/card-img/tw00008155.png","set":"強化擴充包「寶可夢卡牌151」","num":"032","hp":"60","types":["Darkness"],"stage":"基礎","attacks":[{"name":"角撞","damage":"20"},{"name":"","damage":""}],"tier":0},{"id":33,"zh":"尼多力諾","img":"https://asia.pokemon-card.com/tw/card-img/tw00008156.png","set":"強化擴充包「寶可夢卡牌151」","num":"033","hp":"90","types":["Darkness"],"stage":"1階進化","attacks":[{"name":"銳利之牙","damage":"30"},{"name":"怪力角擊","damage":"100"}],"tier":1},{"id":34,"zh":"<火箭隊的>尼多王ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00012921.png","set":"擴充包「火箭隊的榮耀」","num":"116","hp":"330","types":["Darkness"],"stage":"2階進化","attacks":[{"name":"惡劣角擊","damage":"100"},{"name":"王者衝擊","damage":"240"}],"tier":2},{"id":35,"zh":"莉莉艾的皮皮ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00012652.png","set":"擴充包「對戰搭檔」","num":"126","hp":"190","types":["Psychic"],"stage":"基礎","attacks":[{"name":"滿月輪舞","damage":"20+"}],"tier":0},{"id":36,"zh":"皮可西ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00008381.png","set":"ex初階牌組","num":"048","hp":"260","types":["Psychic"],"stage":"1階進化","attacks":[{"name":"月亮奇跡","damage":"170"}],"tier":1},{"id":37,"zh":"阿羅拉 六尾VSTAR","img":"https://asia.pokemon-card.com/tw/card-img/tw00006963.png","set":"強化擴充包「白熱奧祕」","num":"023","hp":"240","types":["Water"],"stage":"其他","attacks":[{"name":"雪之幻想","damage":"160"}],"tier":0},{"id":38,"zh":"九尾ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00008161.png","set":"強化擴充包「寶可夢卡牌151」","num":"038","hp":"260","types":["Fire"],"stage":"1階進化","attacks":[{"name":"熱風","damage":"30"},{"name":"現形熾火","damage":"80+"}],"tier":1},{"id":39,"zh":"胖丁","img":"https://asia.pokemon-card.com/tw/card-img/tw00004210.png","set":"擴充包「眾星雲集組合篇」SET B","num":"084","hp":"60","types":["Fairy"],"stage":"基礎","attacks":[{"name":"滾動","damage":"10"},{"name":"連環巴掌","damage":"20×"}],"tier":0},{"id":40,"zh":"胖可丁ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00008312.png","set":"強化擴充包「寶可夢卡牌151」","num":"189","hp":"250","types":["Colorless"],"stage":"1階進化","attacks":[{"name":"朋友衝撞","damage":"90+"}],"tier":1},{"id":41,"zh":"超音蝠","img":"https://asia.pokemon-card.com/tw/card-img/tw00002967.png","set":"擴充包「雙倍爆擊」SET B","num":"044","hp":"50","types":["Psychic"],"stage":"基礎","attacks":[{"name":"咬住","damage":"10"},{"name":"毒液衝擊","damage":"20+"}],"tier":0},{"id":42,"zh":"大嘴蝠","img":"https://asia.pokemon-card.com/tw/card-img/tw00008165.png","set":"強化擴充包「寶可夢卡牌151」","num":"042","hp":"80","types":["Darkness"],"stage":"1階進化","attacks":[{"name":"直擊飛行","damage":""},{"name":"","damage":""}],"tier":1},{"id":43,"zh":"走路草","img":"https://asia.pokemon-card.com/tw/card-img/tw00008166.png","set":"強化擴充包「寶可夢卡牌151」","num":"043","hp":"60","types":["Grass"],"stage":"基礎","attacks":[{"name":"飛葉快刀","damage":"20"},{"name":"","damage":""}],"tier":0},{"id":44,"zh":"臭臭花","img":"https://asia.pokemon-card.com/tw/card-img/tw00003973.png","set":"擴充包「眾星雲集組合篇」SET A","num":"005","hp":"80","types":["Grass"],"stage":"1階進化","attacks":[{"name":"臭氣沖天","damage":""},{"name":"飛葉快刀","damage":"30"}],"tier":1},{"id":45,"zh":"霸王花GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00003777.png","set":"擴充包「傳說交鋒」SET A","num":"005","hp":"240","types":["Grass"],"stage":"2階進化","attacks":[{"name":"大開花","damage":"180-"},{"name":"過敏性炸彈GX","damage":"50"}],"tier":1},{"id":46,"zh":"派拉斯","img":"https://asia.pokemon-card.com/tw/card-img/tw00007527.png","set":"高級擴充包「天地萬物VSTAR」","num":"207","hp":"70","types":["Grass"],"stage":"基礎","attacks":[{"name":"吸取","damage":"20"},{"name":"","damage":""}],"tier":0},{"id":47,"zh":"派拉斯特","img":"https://asia.pokemon-card.com/tw/card-img/tw00008170.png","set":"強化擴充包「寶可夢卡牌151」","num":"047","hp":"120","types":["Grass"],"stage":"1階進化","attacks":[{"name":"散佈菌絲","damage":""},{"name":"利爪劈擊","damage":"50"}],"tier":1},{"id":48,"zh":"毛球","img":"https://asia.pokemon-card.com/tw/card-img/tw00008171.png","set":"強化擴充包「寶可夢卡牌151」","num":"048","hp":"70","types":["Grass"],"stage":"基礎","attacks":[{"name":"咬","damage":"10"},{"name":"光束","damage":"40"}],"tier":0},{"id":49,"zh":"摩魯蛾GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00002759.png","set":"擴充包「雙倍爆擊」SET A","num":"020","hp":"200","types":["Grass"],"stage":"1階進化","attacks":[{"name":"忍之極意","damage":"110+"},{"name":"十枚返GX","damage":"60"}],"tier":1},{"id":50,"zh":"阿羅拉 地鼠","img":"https://asia.pokemon-card.com/tw/card-img/tw00004196.png","set":"擴充包「眾星雲集組合篇」SET B","num":"070","hp":"50","types":["Metal"],"stage":"基礎","attacks":[{"name":"洞穴探險","damage":""},{"name":"擲泥","damage":"10"}],"tier":1},{"id":51,"zh":"三地鼠","img":"https://asia.pokemon-card.com/tw/card-img/tw00008174.png","set":"強化擴充包「寶可夢卡牌151」","num":"051","hp":"90","types":["Fighting"],"stage":"1階進化","attacks":[{"name":"魯莽頭擊","damage":"40"},{"name":"泥巴炸彈","damage":"80"}],"tier":1},{"id":52,"zh":"喵喵VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00002394.png","set":"擴充包「劍&盾」SET A","num":"126","hp":"300","types":["Colorless"],"stage":"其他","attacks":[{"name":"超極巨特大金幣","damage":"200"}],"tier":0},{"id":53,"zh":"<火箭隊的>貓老大ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00012923.png","set":"擴充包「火箭隊的榮耀」","num":"118","hp":"260","types":["Colorless"],"stage":"1階進化","attacks":[{"name":"高傲指令","damage":""},{"name":"殘酷斬","damage":"140"}],"tier":1},{"id":54,"zh":"可達鴨","img":"https://asia.pokemon-card.com/tw/card-img/tw00008298.png","set":"強化擴充包「寶可夢卡牌151」","num":"175","hp":"70","types":["Water"],"stage":"基礎","attacks":[{"name":"過慮","damage":""},{"name":"水槍","damage":"10"}],"tier":0},{"id":55,"zh":"哥達鴨","img":"https://asia.pokemon-card.com/tw/card-img/tw00004134.png","set":"擴充包「眾星雲集組合篇」SET B","num":"008","hp":"90","types":["Water"],"stage":"1階進化","attacks":[{"name":"抓","damage":"20"},{"name":"雙重噴射","damage":"60×"}],"tier":1},{"id":56,"zh":"猴怪","img":"https://asia.pokemon-card.com/tw/card-img/tw00008179.png","set":"強化擴充包「寶可夢卡牌151」","num":"056","hp":"60","types":["Fighting"],"stage":"基礎","attacks":[{"name":"大鬧一番","damage":"20+"},{"name":"","damage":""}],"tier":0},{"id":57,"zh":"火爆猴","img":"https://asia.pokemon-card.com/tw/card-img/tw00008180.png","set":"強化擴充包「寶可夢卡牌151」","num":"057","hp":"120","types":["Fighting"],"stage":"1階進化","attacks":[{"name":"狂嗥","damage":"40"},{"name":"盛怒粉碎","damage":"150"}],"tier":1},{"id":58,"zh":"卡蒂狗","img":"https://asia.pokemon-card.com/tw/card-img/tw00007455.png","set":"特別牌組組合 「噴火龍VSTAR vs 烈空坐VMAX」","num":"005","hp":"80","types":["Fire"],"stage":"基礎","attacks":[{"name":"升溫","damage":""},{"name":"烈焰","damage":"30"}],"tier":0},{"id":59,"zh":"風速狗ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00007664.png","set":"擴充包「紫ex」","num":"016","hp":"280","types":["Fire"],"stage":"1階進化","attacks":[{"name":"憤怒之爪","damage":"30+"},{"name":"紅蓮火焰","damage":"250"}],"tier":2},{"id":60,"zh":"蚊香蝌蚪","img":"https://asia.pokemon-card.com/tw/card-img/tw00008183.png","set":"強化擴充包「寶可夢卡牌151」","num":"060","hp":"60","types":["Water"],"stage":"基礎","attacks":[{"name":"泡沫","damage":"10"},{"name":"","damage":""}],"tier":0},{"id":61,"zh":"蚊香君","img":"https://asia.pokemon-card.com/tw/card-img/tw00008184.png","set":"強化擴充包「寶可夢卡牌151」","num":"061","hp":"90","types":["Water"],"stage":"1階進化","attacks":[{"name":"飛濺","damage":"20"},{"name":"蛙跳","damage":"30+"}],"tier":1},{"id":62,"zh":"蚊香泳士","img":"https://asia.pokemon-card.com/tw/card-img/tw00008185.png","set":"強化擴充包「寶可夢卡牌151」","num":"062","hp":"160","types":["Water"],"stage":"2階進化","attacks":[{"name":"泡沫光線","damage":"50"},{"name":"豪邁拳","damage":"100+"}],"tier":1},{"id":63,"zh":"凱西","img":"https://asia.pokemon-card.com/tw/card-img/tw00008186.png","set":"強化擴充包「寶可夢卡牌151」","num":"063","hp":"50","types":["Psychic"],"stage":"基礎","attacks":[{"name":"精神射擊","damage":"20"},{"name":"","damage":""}],"tier":0},{"id":64,"zh":"勇基拉","img":"https://asia.pokemon-card.com/tw/card-img/tw00008187.png","set":"強化擴充包「寶可夢卡牌151」","num":"064","hp":"80","types":["Psychic"],"stage":"1階進化","attacks":[{"name":"瞬間移動攻擊","damage":"30"},{"name":"","damage":""}],"tier":1},{"id":65,"zh":"胡地ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00008188.png","set":"強化擴充包「寶可夢卡牌151」","num":"065","hp":"310","types":["Psychic"],"stage":"2階進化","attacks":[{"name":"意志劫持","damage":"90+"},{"name":"維度之手","damage":"120"}],"tier":2},{"id":66,"zh":"腕力","img":"https://asia.pokemon-card.com/tw/card-img/tw00008189.png","set":"強化擴充包「寶可夢卡牌151」","num":"066","hp":"70","types":["Fighting"],"stage":"基礎","attacks":[{"name":"敲山","damage":""},{"name":"出拳","damage":"30"}],"tier":0},{"id":67,"zh":"豪力","img":"https://asia.pokemon-card.com/tw/card-img/tw00008190.png","set":"強化擴充包「寶可夢卡牌151」","num":"067","hp":"100","types":["Fighting"],"stage":"1階進化","attacks":[{"name":"推山","damage":"50"},{"name":"","damage":""}],"tier":1},{"id":68,"zh":"怪力VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00007296.png","set":"高級擴充包「天地萬物VSTAR」","num":"072","hp":"330","types":["Fighting"],"stage":"其他","attacks":[{"name":"復仇光炮","damage":"80+"},{"name":"超極巨會心一擊","damage":"240"}],"tier":2},{"id":69,"zh":"喇叭芽","img":"https://asia.pokemon-card.com/tw/card-img/tw00008192.png","set":"強化擴充包「寶可夢卡牌151」","num":"069","hp":"60","types":["Grass"],"stage":"基礎","attacks":[{"name":"居合斬","damage":"10"},{"name":"束縛","damage":"20"}],"tier":0},{"id":70,"zh":"口呆花","img":"https://asia.pokemon-card.com/tw/card-img/tw00008193.png","set":"強化擴充包「寶可夢卡牌151」","num":"070","hp":"90","types":["Grass"],"stage":"1階進化","attacks":[{"name":"居合斬","damage":"30"},{"name":"噴汁","damage":"50"}],"tier":1},{"id":71,"zh":"大食花","img":"https://asia.pokemon-card.com/tw/card-img/tw00008194.png","set":"強化擴充包「寶可夢卡牌151」","num":"071","hp":"150","types":["Grass"],"stage":"2階進化","attacks":[{"name":"噴出","damage":"50"},{"name":"遲延酸液","damage":"120"}],"tier":1},{"id":72,"zh":"瑪瑙水母","img":"https://asia.pokemon-card.com/tw/card-img/tw00008195.png","set":"強化擴充包「寶可夢卡牌151」","num":"072","hp":"60","types":["Water"],"stage":"基礎","attacks":[{"name":"麻","damage":"10"},{"name":"灑水","damage":"20"}],"tier":0},{"id":73,"zh":"毒刺水母","img":"https://asia.pokemon-card.com/tw/card-img/tw00008196.png","set":"強化擴充包「寶可夢卡牌151」","num":"073","hp":"120","types":["Water"],"stage":"1階進化","attacks":[{"name":"毒之鞭","damage":"30"},{"name":"恐慌觸手","damage":"90×"}],"tier":1},{"id":74,"zh":"阿羅拉 小拳石","img":"https://asia.pokemon-card.com/tw/card-img/tw00012109.png","set":"雙ex初階牌組 Generations","num":"039","hp":"60","types":["Lightning"],"stage":"基礎","attacks":[{"name":"拳骨","damage":"10"},{"name":"小電氣","damage":"30"}],"tier":0},{"id":75,"zh":"阿羅拉 隆隆石","img":"https://asia.pokemon-card.com/tw/card-img/tw00012110.png","set":"雙ex初階牌組 Generations","num":"040","hp":"100","types":["Lightning"],"stage":"1階進化","attacks":[{"name":"滾動衝撞","damage":"30"},{"name":"麻麻拳","damage":"50"}],"tier":1},{"id":76,"zh":"隆隆岩ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00008199.png","set":"強化擴充包「寶可夢卡牌151」","num":"076","hp":"330","types":["Fighting"],"stage":"2階進化","attacks":[{"name":"極限轉動","damage":"50"},{"name":"岩石衝撞","damage":"180"}],"tier":2},{"id":77,"zh":"小火馬","img":"https://asia.pokemon-card.com/tw/card-img/tw00008200.png","set":"強化擴充包「寶可夢卡牌151」","num":"077","hp":"70","types":["Fire"],"stage":"基礎","attacks":[{"name":"呼喚","damage":""},{"name":"活蹦亂跳","damage":"30"}],"tier":0},{"id":78,"zh":"烈焰馬","img":"https://asia.pokemon-card.com/tw/card-img/tw00008201.png","set":"強化擴充包「寶可夢卡牌151」","num":"078","hp":"100","types":["Fire"],"stage":"1階進化","attacks":[{"name":"灼熱","damage":""},{"name":"音速迴轉","damage":"90"}],"tier":1},{"id":79,"zh":"呆呆獸","img":"https://asia.pokemon-card.com/tw/card-img/tw00012097.png","set":"雙ex初階牌組 Generations","num":"027","hp":"70","types":["Water"],"stage":"基礎","attacks":[{"name":"水槍","damage":"10"},{"name":"擺尾拍擊","damage":"30"}],"tier":0},{"id":80,"zh":"呆殼獸","img":"https://asia.pokemon-card.com/tw/card-img/tw00004154.png","set":"擴充包「眾星雲集組合篇」SET B","num":"028","hp":"110","types":["Psychic"],"stage":"1階進化","attacks":[{"name":"瞬間失憶","damage":"20"},{"name":"硬撐","damage":"50+"}],"tier":1},{"id":81,"zh":"小磁怪","img":"https://asia.pokemon-card.com/tw/card-img/tw00004699.png","set":"擴充包「美夢成真組合篇」SET B","num":"058","hp":"60","types":["Lightning"],"stage":"基礎","attacks":[{"name":"磁力搜索","damage":""},{"name":"撞擊","damage":"10"}],"tier":0},{"id":82,"zh":"三合一磁怪","img":"https://asia.pokemon-card.com/tw/card-img/tw00004700.png","set":"擴充包「美夢成真組合篇」SET B","num":"059","hp":"90","types":["Lightning"],"stage":"1階進化","attacks":[{"name":"衝撞","damage":"20"},{"name":"電磁炮","damage":"80"}],"tier":1},{"id":83,"zh":"大蔥鴨","img":"https://asia.pokemon-card.com/tw/card-img/tw00008206.png","set":"強化擴充包「寶可夢卡牌151」","num":"083","hp":"90","types":["Colorless"],"stage":"基礎","attacks":[{"name":"背來","damage":""},{"name":"用蔥毆打","damage":"30"}],"tier":0},{"id":84,"zh":"嘟嘟","img":"https://asia.pokemon-card.com/tw/card-img/tw00008207.png","set":"強化擴充包「寶可夢卡牌151」","num":"084","hp":"70","types":["Colorless"],"stage":"基礎","attacks":[{"name":"突擊","damage":"30"},{"name":"","damage":""}],"tier":0},{"id":85,"zh":"嘟嘟利","img":"https://asia.pokemon-card.com/tw/card-img/tw00002867.png","set":"擴充包「雙倍爆擊」SET A","num":"128","hp":"100","types":["Colorless"],"stage":"1階進化","attacks":[{"name":"三重攻擊","damage":"60×"},{"name":"加速突刺","damage":"90"}],"tier":1},{"id":86,"zh":"小海獅","img":"https://asia.pokemon-card.com/tw/card-img/tw00008209.png","set":"強化擴充包「寶可夢卡牌151」","num":"086","hp":"80","types":["Water"],"stage":"基礎","attacks":[{"name":"寒意","damage":"20"},{"name":"","damage":""}],"tier":0},{"id":87,"zh":"白海獅","img":"https://asia.pokemon-card.com/tw/card-img/tw00008210.png","set":"強化擴充包「寶可夢卡牌151」","num":"087","hp":"130","types":["Water"],"stage":"1階進化","attacks":[{"name":"二重飛濺","damage":""},{"name":"極光束","damage":"100"}],"tier":1},{"id":88,"zh":"阿羅拉 臭泥","img":"https://asia.pokemon-card.com/tw/card-img/tw00004156.png","set":"擴充包「眾星雲集組合篇」SET B","num":"030","hp":"80","types":["Psychic"],"stage":"基礎","attacks":[{"name":"毒之氣息","damage":""},{"name":"拍擊","damage":"40"}],"tier":0},{"id":89,"zh":"阿羅拉 臭臭泥GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00004063.png","set":"擴充包「眾星雲集組合篇」SET A","num":"095","hp":"220","types":["Darkness"],"stage":"1階進化","attacks":[{"name":"生化吐息","damage":"10+"},{"name":"咬碎","damage":"120"}],"tier":1},{"id":90,"zh":"大舌貝","img":"https://asia.pokemon-card.com/tw/card-img/tw00008213.png","set":"強化擴充包「寶可夢卡牌151」","num":"090","hp":"70","types":["Water"],"stage":"基礎","attacks":[{"name":"硬殼壓制","damage":"30"},{"name":"","damage":""}],"tier":0},{"id":91,"zh":"刺甲貝","img":"https://asia.pokemon-card.com/tw/card-img/tw00008214.png","set":"強化擴充包「寶可夢卡牌151」","num":"091","hp":"130","types":["Water"],"stage":"1階進化","attacks":[{"name":"防護充能","damage":"80"},{"name":"","damage":""}],"tier":1},{"id":92,"zh":"鬼斯","img":"https://asia.pokemon-card.com/tw/card-img/tw00007270.png","set":"高級擴充包「天地萬物VSTAR」","num":"046","hp":"40","types":["Psychic"],"stage":"基礎","attacks":[{"name":"無聲加害","damage":""},{"name":"","damage":""}],"tier":0},{"id":93,"zh":"鬼斯通","img":"https://asia.pokemon-card.com/tw/card-img/tw00007271.png","set":"高級擴充包「天地萬物VSTAR」","num":"047","hp":"70","types":["Psychic"],"stage":"1階進化","attacks":[{"name":"詛咒水滴","damage":""},{"name":"","damage":""}],"tier":1},{"id":94,"zh":"耿鬼VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00002200.png","set":"V起始牌組 「強大」","num":"091","hp":"320","types":["Darkness"],"stage":"其他","attacks":[{"name":"恐慌恐懼","damage":"60×"},{"name":"超極巨大口吞噬","damage":"250"}],"tier":2},{"id":95,"zh":"大岩蛇GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00003008.png","set":"擴充包「雙倍爆擊」SET B","num":"085","hp":"200","types":["Fighting"],"stage":"基礎","attacks":[{"name":"綁緊","damage":"30"},{"name":"重磅衝擊","damage":"150"}],"tier":0},{"id":96,"zh":"催眠貘","img":"https://asia.pokemon-card.com/tw/card-img/tw00008219.png","set":"強化擴充包「寶可夢卡牌151」","num":"096","hp":"80","types":["Psychic"],"stage":"基礎","attacks":[{"name":"意念頭錘","damage":"30"},{"name":"","damage":""}],"tier":0},{"id":97,"zh":"引夢貘人","img":"https://asia.pokemon-card.com/tw/card-img/tw00004349.png","set":"G超起始牌組「眾星雲集組合篇」","num":"065","hp":"110","types":["Psychic"],"stage":"1階進化","attacks":[{"name":"瑜伽姿勢","damage":"20+"},{"name":"催眠波動","damage":"70"}],"tier":1},{"id":98,"zh":"大鉗蟹","img":"https://asia.pokemon-card.com/tw/card-img/tw00008221.png","set":"強化擴充包「寶可夢卡牌151」","num":"098","hp":"70","types":["Water"],"stage":"基礎","attacks":[{"name":"招潮","damage":""},{"name":"蟹鉗錘","damage":"50"}],"tier":0},{"id":99,"zh":"巨鉗蟹VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00005710.png","set":"初階牌組100","num":"081","hp":"330","types":["Water"],"stage":"其他","attacks":[{"name":"泡沫祭","damage":""},{"name":"超極巨鉗制利剪","damage":"240"}],"tier":1},{"id":100,"zh":"霹靂電球","img":"https://asia.pokemon-card.com/tw/card-img/tw00012112.png","set":"雙ex初階牌組 Generations","num":"042","hp":"70","types":["Lightning"],"stage":"基礎","attacks":[{"name":"光彈","damage":"10"},{"name":"滾動","damage":"20"}],"tier":0},{"id":101,"zh":"頑皮雷彈GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00004703.png","set":"擴充包「美夢成真組合篇」SET B","num":"062","hp":"190","types":["Lightning"],"stage":"1階進化","attacks":[{"name":"電球","damage":"50"},{"name":"粉碎燃燒GX","damage":"30+"}],"tier":1},{"id":102,"zh":"蛋蛋","img":"https://asia.pokemon-card.com/tw/card-img/tw00004127.png","set":"擴充包「眾星雲集組合篇」SET B","num":"001","hp":"50","types":["Grass"],"stage":"基礎","attacks":[{"name":"催眠術","damage":""},{"name":"衝撞","damage":"10"}],"tier":0},{"id":103,"zh":"阿羅拉 椰蛋樹ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00011457.png","set":"強化擴充包「樂園騰龍」","num":"092","hp":"300","types":["Dragon"],"stage":"1階進化","attacks":[{"name":"熱帶狂燒","damage":"150"},{"name":"嗡嗡榍石","damage":""}],"tier":2},{"id":104,"zh":"卡拉卡拉","img":"https://asia.pokemon-card.com/tw/card-img/tw00012131.png","set":"雙ex初階牌組 Generations","num":"061","hp":"70","types":["Fighting"],"stage":"基礎","attacks":[{"name":"踩","damage":"10"},{"name":"打擊","damage":"20"}],"tier":0},{"id":105,"zh":"阿羅拉 嘎啦嘎啦GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00004647.png","set":"擴充包「美夢成真組合篇」SET B","num":"006","hp":"200","types":["Fire"],"stage":"1階進化","attacks":[{"name":"詛咒之軀","damage":""},{"name":"熱力骨","damage":"90"}],"tier":1},{"id":106,"zh":"飛腿郎","img":"https://asia.pokemon-card.com/tw/card-img/tw00008229.png","set":"強化擴充包「寶可夢卡牌151」","num":"106","hp":"120","types":["Fighting"],"stage":"基礎","attacks":[{"name":"龍捲風踢腿","damage":""},{"name":"踢倒","damage":"100"}],"tier":1},{"id":107,"zh":"快拳郎","img":"https://asia.pokemon-card.com/tw/card-img/tw00003014.png","set":"擴充包「雙倍爆擊」SET B","num":"091","hp":"90","types":["Fighting"],"stage":"基礎","attacks":[{"name":"一擊脫離","damage":"30"},{"name":"增量拳","damage":"70"}],"tier":1},{"id":108,"zh":"大舌頭","img":"https://asia.pokemon-card.com/tw/card-img/tw00005144.png","set":"G超起始牌組「美夢成真組合篇」","num":"129","hp":"100","types":["Colorless"],"stage":"基礎","attacks":[{"name":"舔取","damage":""},{"name":"摔打","damage":"50×"}],"tier":0},{"id":109,"zh":"瓦斯彈","img":"https://asia.pokemon-card.com/tw/card-img/tw00008232.png","set":"強化擴充包「寶可夢卡牌151」","num":"109","hp":"60","types":["Darkness"],"stage":"基礎","attacks":[{"name":"奇異瓦斯","damage":"20"},{"name":"","damage":""}],"tier":0},{"id":110,"zh":"雙彈瓦斯","img":"https://asia.pokemon-card.com/tw/card-img/tw00001779.png","set":"V起始牌組 「進化」","num":"098","hp":"130","types":["Darkness"],"stage":"1階進化","attacks":[{"name":"混合毒素","damage":""},{"name":"煙之暴擊","damage":"20+"}],"tier":1},{"id":111,"zh":"獨角犀牛","img":"https://asia.pokemon-card.com/tw/card-img/tw00004035.png","set":"擴充包「眾星雲集組合篇」SET A","num":"067","hp":"80","types":["Fighting"],"stage":"基礎","attacks":[{"name":"撞倒","damage":"20"},{"name":"角鑽","damage":"60"}],"tier":0},{"id":112,"zh":"鑽角犀獸","img":"https://asia.pokemon-card.com/tw/card-img/tw00004036.png","set":"擴充包「眾星雲集組合篇」SET A","num":"068","hp":"110","types":["Fighting"],"stage":"1階進化","attacks":[{"name":"巨岩墜落","damage":"80"},{"name":"超級角擊","damage":"120"}],"tier":2},{"id":113,"zh":"吉利蛋","img":"https://asia.pokemon-card.com/tw/card-img/tw00006584.png","set":"強化擴充包「Pokémon GO」","num":"051","hp":"130","types":["Colorless"],"stage":"基礎","attacks":[{"name":"美味蛋","damage":""},{"name":"重摑","damage":"30"}],"tier":1},{"id":114,"zh":"蔓藤怪","img":"https://asia.pokemon-card.com/tw/card-img/tw00008301.png","set":"強化擴充包「寶可夢卡牌151」","num":"178","hp":"80","types":["Grass"],"stage":"基礎","attacks":[{"name":"緊束作法","damage":"10+"},{"name":"","damage":""}],"tier":0},{"id":115,"zh":"袋獸ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00008315.png","set":"強化擴充包「寶可夢卡牌151」","num":"192","hp":"230","types":["Colorless"],"stage":"基礎","attacks":[{"name":"三重抽出","damage":""},{"name":"機關槍拳","damage":"100×"}],"tier":2},{"id":116,"zh":"墨海馬","img":"https://asia.pokemon-card.com/tw/card-img/tw00008239.png","set":"強化擴充包「寶可夢卡牌151」","num":"116","hp":"60","types":["Water"],"stage":"基礎","attacks":[{"name":"潑水","damage":"10"},{"name":"銳利鰭","damage":"40"}],"tier":0},{"id":117,"zh":"海刺龍","img":"https://asia.pokemon-card.com/tw/card-img/tw00008240.png","set":"強化擴充包「寶可夢卡牌151」","num":"117","hp":"80","types":["Water"],"stage":"1階進化","attacks":[{"name":"盲目塗墨","damage":"50"},{"name":"","damage":""}],"tier":1},{"id":118,"zh":"角金魚","img":"https://asia.pokemon-card.com/tw/card-img/tw00008241.png","set":"強化擴充包「寶可夢卡牌151」","num":"118","hp":"70","types":["Water"],"stage":"基礎","attacks":[{"name":"三連撞","damage":"10×"},{"name":"潑灑清水","damage":"20"}],"tier":0},{"id":119,"zh":"金魚王","img":"https://asia.pokemon-card.com/tw/card-img/tw00008242.png","set":"強化擴充包「寶可夢卡牌151」","num":"119","hp":"110","types":["Water"],"stage":"1階進化","attacks":[{"name":"隨興游水","damage":"10"},{"name":"水之角擊","damage":"60+"}],"tier":1},{"id":120,"zh":"海星星","img":"https://asia.pokemon-card.com/tw/card-img/tw00006874.png","set":"VSTAR&VMAX 高級牌組 代歐奇希斯","num":"001","hp":"60","types":["Water"],"stage":"基礎","attacks":[{"name":"雙重旋轉","damage":"10×"},{"name":"","damage":""}],"tier":0},{"id":121,"zh":"寶石海星GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00002793.png","set":"擴充包「雙倍爆擊」SET A","num":"054","hp":"190","types":["Water"],"stage":"1階進化","attacks":[{"name":"星星光流","damage":"40"},{"name":"迴轉攻擊","damage":"100"}],"tier":2},{"id":122,"zh":"魔牆人偶GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00004479.png","set":"擴充包「美夢成真組合篇」SET A","num":"038","hp":"150","types":["Psychic"],"stage":"基礎","attacks":[{"name":"分解","damage":""},{"name":"回命戲法GX","damage":""}],"tier":0},{"id":123,"zh":"飛天螳螂","img":"https://asia.pokemon-card.com/tw/card-img/tw00004642.png","set":"擴充包「美夢成真組合篇」SET B","num":"001","hp":"70","types":["Grass"],"stage":"基礎","attacks":[{"name":"分身","damage":""},{"name":"高速移動","damage":"20"}],"tier":2},{"id":124,"zh":"迷唇姐ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00008247.png","set":"強化擴充包「寶可夢卡牌151」","num":"124","hp":"200","types":["Water"],"stage":"基礎","attacks":[{"name":"動心之吻","damage":""},{"name":"冰凍之風","damage":"120"}],"tier":0},{"id":125,"zh":"電擊獸","img":"https://asia.pokemon-card.com/tw/card-img/tw00007258.png","set":"高級擴充包「天地萬物VSTAR」","num":"034","hp":"80","types":["Lightning"],"stage":"基礎","attacks":[{"name":"電磁波","damage":""},{"name":"伏特頭擊","damage":"30"}],"tier":0},{"id":126,"zh":"鴨嘴火獸","img":"https://asia.pokemon-card.com/tw/card-img/tw00007240.png","set":"高級擴充包「天地萬物VSTAR」","num":"016","hp":"90","types":["Fire"],"stage":"基礎","attacks":[{"name":"踢倒","damage":"20"},{"name":"火拳","damage":"70"}],"tier":0},{"id":127,"zh":"凱羅斯","img":"https://asia.pokemon-card.com/tw/card-img/tw00008250.png","set":"強化擴充包「寶可夢卡牌151」","num":"127","hp":"120","types":["Grass"],"stage":"基礎","attacks":[{"name":"夾住","damage":"30"},{"name":"蠻幹上投","damage":"90+"}],"tier":0},{"id":128,"zh":"肯泰羅GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00004242.png","set":"擴充包「眾星雲集組合篇」SET B","num":"116","hp":"180","types":["Colorless"],"stage":"基礎","attacks":[{"name":"憤怒","damage":"20+"},{"name":"角撞","damage":"60"}],"tier":0},{"id":129,"zh":"鯉魚王","img":"https://asia.pokemon-card.com/tw/card-img/tw00006554.png","set":"強化擴充包「Pokémon GO」","num":"021","hp":"30","types":["Water"],"stage":"基礎","attacks":[{"name":"跳跳群聚","damage":""},{"name":"怒之尾鰭","damage":"10+"}],"tier":0},{"id":130,"zh":"暴鯉龍VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00000898.png","set":"擴充包「蒼空烈流」","num":"021","hp":"330","types":["Water"],"stage":"其他","attacks":[{"name":"極巨暴君","damage":"240"}],"tier":2},{"id":131,"zh":"拉普拉斯VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00002490.png","set":"擴充包「劍&盾」SET B","num":"068","hp":"320","types":["Water"],"stage":"其他","attacks":[{"name":"超極巨高壓水泵","damage":"90+"}],"tier":2},{"id":132,"zh":"百變怪VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00000241.png","set":"高級擴充包「閃色明星V」","num":"141","hp":"320","types":["Colorless"],"stage":"其他","attacks":[{"name":"極巨變身","damage":""}],"tier":0},{"id":133,"zh":"伊布VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00001633.png","set":"V起始牌組 「挑戰」","num":"108","hp":"300","types":["Colorless"],"stage":"其他","attacks":[{"name":"超極巨熱情擁抱","damage":"150"},{"name":"","damage":""}],"tier":0},{"id":134,"zh":"水伊布VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00001715.png","set":"V起始牌組 「進化」","num":"034","hp":"320","types":["Water"],"stage":"其他","attacks":[{"name":"泡沫艙","damage":""},{"name":"極巨激流","damage":"100+"}],"tier":2},{"id":135,"zh":"雷伊布VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00001740.png","set":"V起始牌組 「進化」","num":"059","hp":"300","types":["Lightning"],"stage":"其他","attacks":[{"name":"極巨迅雷","damage":"100"}],"tier":2},{"id":136,"zh":"火伊布VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00001700.png","set":"V起始牌組 「進化」","num":"019","hp":"320","types":["Fire"],"stage":"其他","attacks":[{"name":"極巨爆裂","damage":"100×"}],"tier":2},{"id":137,"zh":"多邊獸","img":"https://asia.pokemon-card.com/tw/card-img/tw00004084.png","set":"擴充包「眾星雲集組合篇」SET A","num":"116","hp":"60","types":["Colorless"],"stage":"基礎","attacks":[{"name":"代碼檢查","damage":""},{"name":"光束","damage":"10"}],"tier":0},{"id":138,"zh":"菊石獸","img":"https://asia.pokemon-card.com/tw/card-img/tw00008303.png","set":"強化擴充包「寶可夢卡牌151」","num":"180","hp":"100","types":["Water"],"stage":"1階進化","attacks":[{"name":"觸手復元","damage":"50"},{"name":"","damage":""}],"tier":0},{"id":139,"zh":"多刺菊石獸V","img":"https://asia.pokemon-card.com/tw/card-img/tw00007434.png","set":"擴充包「思維激盪」","num":"100","hp":"190","types":["Water"],"stage":"基礎","attacks":[{"name":"原始指引","damage":""},{"name":"觸手凝固","damage":"110"}],"tier":1},{"id":140,"zh":"化石盔","img":"https://asia.pokemon-card.com/tw/card-img/tw00008263.png","set":"強化擴充包「寶可夢卡牌151」","num":"140","hp":"90","types":["Fighting"],"stage":"1階進化","attacks":[{"name":"雙重抓","damage":"70×"},{"name":"","damage":""}],"tier":0},{"id":141,"zh":"鐮刀盔","img":"https://asia.pokemon-card.com/tw/card-img/tw00008264.png","set":"強化擴充包「寶可夢卡牌151」","num":"141","hp":"160","types":["Fighting"],"stage":"2階進化","attacks":[{"name":"吸取揮砍","damage":"100"}],"tier":1},{"id":142,"zh":"化石翼龍GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00003336.png","set":"擴充包「傳說交鋒」SET B","num":"095","hp":"210","types":["Fighting"],"stage":"1階進化","attacks":[{"name":"岩石粉碎","damage":"120"},{"name":"狂野俯衝GX","damage":"50×"}],"tier":0},{"id":143,"zh":"卡比獸VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00002542.png","set":"擴充包「劍&盾」SET B","num":"120","hp":"340","types":["Colorless"],"stage":"其他","attacks":[{"name":"超極巨自由墜落","damage":"60+"}],"tier":2},{"id":144,"zh":"急凍鳥GX","img":"https://asia.pokemon-card.com/tw/card-img/tw00004674.png","set":"擴充包「美夢成真組合篇」SET B","num":"033","hp":"170","types":["Water"],"stage":"基礎","attacks":[{"name":"冰之翼","damage":"130"},{"name":"極寒粉碎GX","damage":""}],"tier":3},{"id":145,"zh":"閃電鳥ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00008268.png","set":"強化擴充包「寶可夢卡牌151」","num":"145","hp":"200","types":["Lightning"],"stage":"基礎","attacks":[{"name":"閃電連彈","damage":"120"}],"tier":3},{"id":146,"zh":"<火箭隊的>火焰鳥ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00012765.png","set":"擴充包「火箭隊的榮耀」","num":"015","hp":"220","types":["Fire"],"stage":"基礎","attacks":[{"name":"火焰屏障","damage":"110"},{"name":"邪惡灼燒","damage":""}],"tier":3},{"id":147,"zh":"迷你龍","img":"https://asia.pokemon-card.com/tw/card-img/tw00004228.png","set":"擴充包「眾星雲集組合篇」SET B","num":"102","hp":"60","types":["Dragon"],"stage":"基礎","attacks":[{"name":"進化預兆","damage":""},{"name":"尾擊","damage":"10"}],"tier":1},{"id":148,"zh":"哈克龍","img":"https://asia.pokemon-card.com/tw/card-img/tw00004229.png","set":"擴充包「眾星雲集組合篇」SET B","num":"103","hp":"90","types":["Dragon"],"stage":"1階進化","attacks":[{"name":"龍之祈禱","damage":""},{"name":"尾擊","damage":"60"}],"tier":1},{"id":149,"zh":"快龍ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00008423.png","set":"ex初階牌組","num":"090","hp":"330","types":["Dragon"],"stage":"2階進化","attacks":[{"name":"翅膀攻擊","damage":"70"},{"name":"流星破壞","damage":"140+"}],"tier":2},{"id":150,"zh":"超夢ex","img":"https://asia.pokemon-card.com/tw/card-img/tw00008767.png","set":"起始組合 太晶 超夢ex","num":"001","hp":"230","types":["Lightning"],"stage":"基礎","attacks":[{"name":"轉移充能","damage":""},{"name":"光子強念","damage":"10+"}],"tier":3},{"id":151,"zh":"夢幻VMAX","img":"https://asia.pokemon-card.com/tw/card-img/tw00007278.png","set":"高級擴充包「天地萬物VSTAR」","num":"054","hp":"310","types":["Psychic"],"stage":"其他","attacks":[{"name":"交錯匯流","damage":""},{"name":"極巨奇跡","damage":"130"}],"tier":3}];
+
+const TIER = {
+  0:{label:'普通',color:'#9e9e9e'},
+  1:{label:'罕見',color:'#cd7f32'},
+  2:{label:'稀有',color:'#ffd700'},
+  3:{label:'超稀有',color:'#a855f7'},
+};
+const TYPE_COLORS = {
+  Grass:'#78c850',Fire:'#f08030',Water:'#6890f0',Lightning:'#f8d030',
+  Psychic:'#f85888',Fighting:'#c03028',Darkness:'#705848',Metal:'#b8b8d0',
+  Fairy:'#ee99ac',Dragon:'#7038f8',Colorless:'#a8a878',Normal:'#a8a878'
+};
+const CN_TYPE = {Grass:'草',Fire:'火',Water:'水',Lightning:'雷',Psychic:'超',Fighting:'鬥',
+  Darkness:'惡',Metal:'鋼',Fairy:'妖',Dragon:'龍',Colorless:'無',Normal:'無'};
+
+// ===== STATE =====
+let collection = {};   // dexId -> {shiny:bool, count}
+let stats = {packs:0};
+let currentCards = [];
+let busy = false;
+const FILTERS = [['all','全部'],['t0','普通'],['t1','罕見'],['t2','稀有'],['t3','超稀有'],['shiny','閃光']];
+
+function loadState(){
+  try{
+    const s = JSON.parse(localStorage.getItem('ptcg_opener_v1'));
+    if(s){ collection = s.collection || {}; stats = s.stats || {packs:0}; }
+  }catch(e){}
+}
+function saveState(){
+  try{ localStorage.setItem('ptcg_opener_v1', JSON.stringify({collection, stats})); }catch(e){}
+}
+
+// ===== DRAW LOGIC =====
+// last cards have higher rarity chance
+function weightedPick(weights){
+  const keys = Object.keys(weights);
+  let total = keys.reduce((s,k)=>s+weights[k],0);
+  let r = Math.random()*total;
+  for(const k of keys){ r -= weights[k]; if(r<=0) return parseInt(k); }
+  return parseInt(keys[keys.length-1]);
+}
+function drawCards(){
+  const out = [];
+  const tiersByCard = {0:[],1:[],2:[],3:[]};
+  CARDS.forEach(c=>tiersByCard[c.tier].push(c));
+  for(let i=0;i<5;i++){
+    // position-based weights
+    let w;
+    if(i<3) w = {0:58,1:30,2:10,3:2};
+    else if(i===3) w = {0:32,1:36,2:24,3:8};
+    else w = {0:18,1:30,2:38,3:14};
+    const tier = weightedPick(w);
+    const poolArr = tiersByCard[tier];
+    const c = poolArr[Math.floor(Math.random()*poolArr.length)];
+    const shiny = Math.random() < 0.04;
+    out.push({...c, shiny, uid: Date.now()+'_'+i});
+  }
+  return out;
+}
+
+// ===== AUDIO (Web Audio synth) =====
+let actx=null;
+function audio(){ try{ if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)(); return actx; }catch(e){ return null; } }
+function beep(freq,dur,type='sine',vol=.15,delay=0){
+  const a=audio(); if(!a) return;
+  const t=a.currentTime+delay;
+  const o=a.createOscillator(), g=a.createGain();
+  o.type=type; o.frequency.setValueAtTime(freq,t);
+  g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+.01);
+  g.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o.connect(g); g.connect(a.destination); o.start(t); o.stop(t+dur+.05);
+}
+const SFX = {
+  swipe(){ beep(300,.12,'triangle',.1); beep(500,.15,'triangle',.1,.08); },
+  tear(){ beep(180,.25,'sawtooth',.12); beep(120,.3,'sawtooth',.12,.1); beep(90,.4,'sawtooth',.14,.2); },
+  pop(i){ beep(520+i*80,.12,'sine',.12); },
+  flip(){ beep(700,.08,'triangle',.08); },
+  rare(){ [880,1108,1318,1760].forEach((f,i)=>beep(f,.18,'triangle',.14,i*.07)); },
+  ultra(){ [523,659,784,1046,1318,1568,2093].forEach((f,i)=>beep(f,.2,'triangle',.15,i*.09)); },
+};
+
+// ===== PACK SWIPE =====
+function initSwipe(){
+  const pack = document.getElementById('pack');
+  const wrap = document.getElementById('packWrap');
+  let sx=0, sy=0, dx=0, active=false;
+  const trail = document.getElementById('trail');
+  const hint = document.getElementById('swipeHint');
+  function start(e){
+    if(busy) return;
+    const t = e.touches?e.touches[0]:e;
+    sx=t.clientX; sy=t.clientY; dx=0; active=true;
+    pack.style.transition='none';
+    trail.style.opacity=0;
+  }
+  function move(e){
+    if(!active||busy) return;
+    const t = e.touches?e.touches[0]:e;
+    dx = t.clientX-sx;
+    const dy = t.clientY-sy;
+    const rot = Math.max(-18,Math.min(18, -dx*0.08));
+    pack.style.transform = `rotate(${rot}deg) translateX(${dx*0.15}px)`;
+    if(Math.abs(dx)>25){
+      trail.style.opacity=Math.min(1,Math.abs(dx)/140);
+      trail.style.left = (wrap.offsetWidth/2 + dx*0.4)+'px';
+    }
+    if(e.cancelable) e.preventDefault();
+  }
+  function end(){
+    if(!active) return;
+    active=false;
+    pack.style.transform='';
+    if(Math.abs(dx)>80 && !busy){
+      SFX.swipe();
+      openPack();
+    }
+  }
+  pack.addEventListener('touchstart',start,{passive:false});
+  pack.addEventListener('touchmove',move,{passive:false});
+  pack.addEventListener('touchend',end);
+  pack.addEventListener('mousedown',start);
+  window.addEventListener('mousemove',move);
+  window.addEventListener('mouseup',end);
+  hint.addEventListener('click',()=>{ if(!busy) openPack(); });
+}
+
+// ===== OPEN PACK =====
+function openPack(){
+  if(busy) return;
+  busy=true;
+  currentCards = drawCards();
+  document.getElementById('swipeHint').style.display='none';
+  const pack=document.getElementById('pack'), wrap=document.getElementById('packWrap');
+  const halfL=document.getElementById('halfL'), halfR=document.getElementById('halfR');
+  // clone body into halves for tear
+  const body = document.getElementById('packBody').cloneNode(true);
+  const ball=body.querySelector('.pack-ball'), label=body.querySelector('.pack-label');
+  if(ball) ball.remove(); if(label) label.remove();
+  halfL.innerHTML=''; halfR.innerHTML='';
+  const cl = body.cloneNode(true); const cr = body.cloneNode(true);
+  cl.style.cssText='position:absolute;left:0;top:0;bottom:0;width:200%;transform:translateX(0)';
+  cr.style.cssText='position:absolute;left:-100%;top:0;bottom:0;width:200%;transform:translateX(0)';
+  halfL.appendChild(cl); halfR.appendChild(cr);
+  halfL.style.opacity=1; halfR.style.opacity=1;
+  pack.classList.add('tearing');
+  document.getElementById('burst').classList.add('on');
+  SFX.tear();
+  // hide original pack body
+  document.getElementById('packBody').style.visibility='hidden';
+  setTimeout(()=>{
+    document.getElementById('burst').classList.remove('on');
+    document.getElementById('viewPack').style.display='none';
+    document.getElementById('viewResult').classList.add('show');
+    renderResult();
+    busy=false;
+  }, 620);
+}
+
+// ===== RENDER RESULT =====
+function renderResult(){
+  const row=document.getElementById('cardsRow');
+  row.innerHTML='';
+  currentCards.forEach((c,i)=>{
+    const d=document.createElement('div');
+    d.className='card';
+    d.innerHTML = cardHTML(c, 'back');
+    row.appendChild(d);
+    setTimeout(()=>{ d.classList.add('pop'); SFX.pop(i); }, 200+i*170);
+    d.addEventListener('click', ()=>{
+      if(d.classList.contains('flipped')) return;
+      SFX.flip();
+      d.classList.add('flipped');
+      d.querySelector('.card-face').outerHTML = cardHTML(c,'front');
+      d.querySelector('.card-front').style.transform='rotateY(0deg)';
+    });
+  });
+  // add to collection
+  currentCards.forEach(c=>{
+    const key = String(c.id);
+    const cur = collection[key] || {shiny:false,count:0};
+    if(c.shiny) cur.shiny=true;
+    cur.count++;
+    collection[key]=cur;
+  });
+  stats.packs++;
+  saveState();
+  updateStats();
+  // celebrate if any rare+
+  const hasRare = currentCards.some(c=>c.shiny || c.tier>=2);
+  const hasUltra = currentCards.some(c=>c.tier===3 || c.shiny);
+  setTimeout(()=>{
+    if(hasUltra){ SFX.ultra(); celebrate(60); }
+    else if(hasRare){ SFX.rare(); celebrate(24); }
+  }, 1400);
+}
+
+function cardHTML(c, face){
+  const tclass = c.tier===3?'t3':(c.tier===2?'t2':(c.tier===1?'t1':'t0'));
+  const shinyCls = c.shiny?' shiny':'';
+  const types = (c.types||[]).map(t=>`<span class="type-tag" style="background:${TYPE_COLORS[t]||'#999'}">${CN_TYPE[t]||t}</span>`).join('');
+  const atk = (c.attacks&&c.attacks[0])?`${c.attacks[0].name}${c.attacks[0].damage?' '+c.attacks[0].damage:''}`:'';
+  if(face==='back'){
+    return `<div class="card-inner">
+      <div class="card-face card-back"><div class="cb-ball"><div class="cb-dot"></div></div><div class="cb-txt">POKÉMON TCG</div></div>
+      <div class="card-face card-front ${tclass}${shinyCls}">
+        <div class="cf-top"><div class="cf-name">${c.zh}<small>${c.set||''}</small></div><div class="cf-hp">HP ${c.hp||'?'}</div></div>
+        <div class="cf-img"><img src="${c.img}" alt="${c.zh}" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22><rect width=%22120%22 height=%22120%22 fill=%22%23e8e8e8%22/><text x=%2260%22 y=%2265%22 font-size=%2226%22 text-anchor=%22middle%22>❓</text></svg>'"></div>
+        <div class="cf-types">${types}</div>
+        <div class="cf-foot">
+          <span class="cf-set">${c.num?('#'+c.num+' '):''}${atk?('招式 '+atk):''}</span>
+          <span class="rarity-badge ${tclass}${shinyCls}">${c.shiny?'閃光':TIER[c.tier].label}</span>
+        </div>
+        ${c.shiny?'<div class="sparkle"><i>✦</i><i>✦</i><i>✦</i><i>✦</i></div>':''}
+      </div>
+    </div>`;
+  }
+  return `<div class="card-face card-front ${tclass}${shinyCls}">
+    <div class="cf-top"><div class="cf-name">${c.zh}<small>${c.set||''}</small></div><div class="cf-hp">HP ${c.hp||'?'}</div></div>
+    <div class="cf-img"><img src="${c.img}" alt="${c.zh}" loading="lazy" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22><rect width=%22120%22 height=%22120%22 fill=%22%23e8e8e8%22/><text x=%2260%22 y=%2265%22 font-size=%2226%22 text-anchor=%22middle%22>❓</text></svg>'"></div>
+    <div class="cf-types">${types}</div>
+    <div class="cf-foot">
+      <span class="cf-set">${c.num?('#'+c.num+' '):''}${atk?('招式 '+atk):''}</span>
+      <span class="rarity-badge ${tclass}${shinyCls}">${c.shiny?'閃光':TIER[c.tier].label}</span>
+    </div>
+    ${c.shiny?'<div class="sparkle"><i>✦</i><i>✦</i><i>✦</i><i>✦</i></div>':''}
+  </div>`;
+}
+
+// ===== VIEWS =====
+function showView(v){
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  ['pack','dex'].forEach(x=>{
+    document.getElementById('view'+x[0].toUpperCase()+x.slice(1)).classList.remove('show');
+  });
+  if(v==='pack'){
+    document.getElementById('navPack').classList.add('active');
+    document.getElementById('viewPack').style.display='flex';
+    document.getElementById('viewResult').classList.remove('show');
+    document.getElementById('swipeHint').style.display='flex';
+  }else{
+    document.getElementById('navDex').classList.add('active');
+    document.getElementById('viewPack').style.display='none';
+    document.getElementById('viewResult').classList.remove('show');
+    document.getElementById('viewDex').classList.add('show');
+    renderDex();
+  }
+}
+
+// ===== DEX =====
+let dexFilter='all';
+function initFilters(){
+  const row=document.getElementById('filterRow');
+  FILTERS.forEach(([k,l])=>{
+    const b=document.createElement('button');
+    b.className='f-btn'+(k==='all'?' active':'');
+    b.textContent=l;
+    b.onclick=()=>{ dexFilter=k; document.querySelectorAll('.f-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderDex(); };
+    row.appendChild(b);
+  });
+}
+function matchesFilter(c){
+  if(dexFilter==='all') return true;
+  if(dexFilter==='shiny') return !!(collection[c.id] && collection[c.id].shiny);
+  return c.tier === parseInt(dexFilter[1]);
+}
+function renderDex(){
+  const grid=document.getElementById('dexGrid');
+  grid.innerHTML='';
+  let owned=0;
+  CARDS.forEach(c=>{
+    const have = collection[c.id];
+    if(have) owned++;
+    if(!matchesFilter(c)) return;
+    const slot=document.createElement('div');
+    const isShiny = have && have.shiny;
+    slot.className='dex-slot'+(have?' owned':'')+(isShiny?' shiny':'');
+    if(have){
+      const tclass = c.tier===3?'t3':(c.tier===2?'t2':(c.tier===1?'t1':'t0'));
+      slot.innerHTML=`<img src="${c.img}" alt="${c.zh}" loading="lazy"><div class="dex-info"><div class="dex-name">${c.zh}${have.count>1?' ×'+have.count:''}${isShiny?' ✨':''}</div><div class="dex-rar">${TIER[c.tier].label}</div></div>`;
+      slot.onclick=()=>openModal(c, isShiny);
+    }else{
+      slot.innerHTML='<span>?</span>';
+    }
+    grid.appendChild(slot);
+  });
+  document.getElementById('dexCount').textContent = `${owned} / 151`;
+  document.getElementById('dexFill').style.width = (owned/151*100)+'%';
+}
+function openModal(c, shiny){
+  const d=document.createElement('div');
+  d.className='card';
+  d.innerHTML=cardHTML({...c, shiny}, 'front');
+  document.getElementById('modalCard').innerHTML=d.innerHTML;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+
+// ===== CELEBRATE =====
+function celebrate(n){
+  const el=document.getElementById('celebrate');
+  el.innerHTML='';
+  const colors=['#ffd700','#ff5a2e','#a855f7','#00d26a','#0090ff','#ff9a00'];
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    p.style.left=Math.random()*100+'%';
+    p.style.top=-20+'px';
+    p.style.background=colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDelay=(Math.random()*0.8)+'s';
+    p.style.width=p.style.height=(5+Math.random()*7)+'px';
+    el.appendChild(p);
+    setTimeout(()=>p.remove(), 3200);
+  }
+}
+
+// ===== STATS =====
+function updateStats(){
+  document.getElementById('statPacks').textContent = stats.packs;
+  document.getElementById('statColl').textContent = Object.keys(collection).length;
+}
+
+// ===== TUTORIAL =====
+function closeTutorial(){
+  document.getElementById('tutorial').classList.remove('show');
+  try{ localStorage.setItem('ptcg_tut_v1','1'); }catch(e){}
+}
+
+// ===== INIT =====
+loadState();
+initFilters();
+initSwipe();
+updateStats();
+if(!localStorage.getItem('ptcg_tut_v1')){
+  setTimeout(()=>document.getElementById('tutorial').classList.add('show'), 400);
+}
+</script>
+</body>
+</html>
