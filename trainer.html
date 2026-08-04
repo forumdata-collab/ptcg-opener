@@ -644,6 +644,8 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
     <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap">
       <button class="btn-ghost" style="font-size:12px;padding:9px 16px" onclick="shareImage()">🖼️ 分享</button>
       <button class="btn-ghost" style="font-size:12px;padding:9px 16px" onclick="copyShareLink()">🔗 分享連結</button>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:10px;flex-wrap:wrap">
       <button class="btn-ghost" style="font-size:12px;padding:9px 16px" onclick="exportData()">⬇️ 匯出</button>
       <button class="btn-ghost" style="font-size:12px;padding:9px 16px" onclick="document.getElementById('importFile').click()">⬆️ 匯入</button>
       <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importData(this)">
