@@ -1074,25 +1074,34 @@ function renderResult(replay){
   // 卡堆進場音效
   setTimeout(()=>{ SFX.pop(0); }, 150);
 
-  // 逐張翻開：由頂（4）→ 底（0）
-  const order = [4,3,2,1,0];
-  const dur = 620;  // 每張間隔
-  // 下方臨時位置：疊成一疊（後揭嘅卡疊喺上一張上面）
-  const tmpY = 260;  // 向下偏移
-  const tmpX = [ -7, 6, -5, 7, 0 ];  // 輕微錯位，形成一疊卡
+  // 逐張翻開：由頂（4）→ 底（0）；每張序列：翻開 → 放大200%睇2秒 → 縮細飛去3+2位置 → 下一張翻開
+  const order=[4,3,2,1,0];
+  const flipMs = 620;    // 翻開動畫
+  const zoomD  = 500;    // 放大/縮細過渡
+  const viewMs = 2000;   // 放大200%停留（睇卡）時間
+  const gap    = 2600;   // 每張開始相隔
+  // 3+2 佈局（108px 細卡）：idx 0-4 各自目標位
+  const upTargets = [
+    {x:-142,y:0},   // row 0 col 0
+    {x:-24,y:0},    // row 0 col 1
+    {x:94,y:0},     // row 0 col 2
+    {x:-83,y:160},  // row 1 col 0
+    {x:35,y:160},   // row 1 col 1
+  ];
   order.forEach((idx, step)=>{
+    const t0 = 250 + step*gap;
+    const d = cards[idx];
+    const c = currentCards[idx];
     setTimeout(()=>{
-      const d = cards[idx];
-      const c = currentCards[idx];
-      // 翻開 + 飛去下方疊卡位置
+      // 1) 翻開（喺卡堆原位）
       d.classList.remove('in-stack');
       d.classList.add('revealed');
-      d.style.transition='transform .55s cubic-bezier(.2,.9,.3,1.1),opacity .3s';
-      d.style.zIndex = 50 - idx;   // 後揭嘅卡（idx 細）疊喺上面
-      d.style.transform=`translateX(${tmpX[idx]}px) translateY(${tmpY}px)`;
-      // 啪聲 + 稀有度音效 + 觸覺回饋
-      if(c.fx==='crown'){ SFX.ultra(); burstFx(d, 18); vib([100,50,100,50,200]); }
-      else if(c.fx==='gold'){ SFX.ultra(); burstFx(d, 12); vib([80,40,80]); }
+      d.style.transition='opacity .3s';
+      d.style.transform='';
+      d.style.zIndex = 95 - idx;   // 睇緊嗰張置頂
+      // 啪聲 + 稀有度音效 + 觸覺
+      if(c.fx==='crown'){ SFX.ultra(); burstFx(d,18); vib([100,50,100,50,200]); }
+      else if(c.fx==='gold'){ SFX.ultra(); burstFx(d,12); vib([80,40,80]); }
       else if(c.fx==='holo' || c.fx==='immersive'){ SFX.rare(); vib([40,30,60]); }
       else if(c.fx==='fullart'){ SFX.flip(); vib(25); }
       else { SFX.pop(idx); vib(12); }
@@ -1106,29 +1115,23 @@ function renderResult(replay){
         tag.textContent='NEW';
         d.appendChild(tag);
       }
-    }, 200 + step*dur);
+      // 2) 放大 200%（移至舞台中線，睇 2 秒）
+      setTimeout(()=>{
+        d.style.transition='transform '+zoomD+'ms cubic-bezier(.2,1.1,.3,1)';
+        d.style.transform='translateY(30px) scale(2)';
+      }, flipMs);
+      // 3) 縮返細 + 飛去 3+2 位置
+      setTimeout(()=>{
+        d.classList.add('scard-small');
+        d.style.transition='all '+zoomD+'ms cubic-bezier(.2,1.1,.3,1),opacity .3s';
+        d.style.transform=`translateX(${upTargets[idx].x}px) translateY(${upTargets[idx].y}px)`;
+      }, flipMs + viewMs);
+    }, t0);
   });
 
-  // 全部翻開後，等 1 秒，然後一齊飛上 stage 區域停留（3+2 排列唔重疊）
-  const totalT = 200 + 5*dur;
-  const flyUpT = totalT + 1000;
-  // 3+2 佈局（108px 細卡）
-  const upTargets = [
-    {x:-142,y:0},   // row 0 col 0
-    {x:-24,y:0},    // row 0 col 1
-    {x:94,y:0},     // row 0 col 2
-    {x:-83,y:160},  // row 1 col 0
-    {x:35,y:160},   // row 1 col 1
-  ];
-  setTimeout(()=>{
-    cards.forEach((d,i)=>{
-      d.classList.add('scard-small');
-      d.style.transition='all .5s cubic-bezier(.2,1.1,.3,1),opacity .3s';
-      d.style.transform=`translateX(${upTargets[i].x}px) translateY(${upTargets[i].y}px)`;
-    });
-  }, flyUpT);
-
-  // 全部翻開後（飛上完成先 celebrate）
+  // 全部翻開 + 縮細完成後先 celebrate
+  const lastT = 250 + order.length*gap;                 // 最後一張翻開開始
+  const doneT = lastT + flipMs + viewMs + 700;          // 所有卡已就位
   setTimeout(()=>{
     // God Pack 收尾
     if(isGod){ setTimeout(()=>godFlood.classList.remove('on'), 1600); celebrate(80); }
@@ -1136,9 +1139,9 @@ function renderResult(replay){
     else if(hasGold){ celebrate(45); }
     else if(hasUltra){ celebrate(30); }
     else if(currentCards.some(c=>c.fx==='fullart')){ celebrate(18); }
-  }, flyUpT+700);
+  }, doneT+600);
   // 成就檢查
-  setTimeout(()=>checkAchievements(), flyUpT+1500);
+  setTimeout(()=>checkAchievements(), doneT+1300);
 }
 
 // 翻開瞬間粒子爆
