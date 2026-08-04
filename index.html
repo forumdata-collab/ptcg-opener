@@ -77,6 +77,44 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .card{width:158px;height:222px;perspective:900px;cursor:pointer;flex-shrink:0;opacity:0}
 .card.pop{animation:cardPop .55s cubic-bezier(.2,1.2,.3,1) forwards}
 @keyframes cardPop{0%{transform:scale(.3) translateY(120px);opacity:0}60%{transform:scale(1.08) translateY(-16px);opacity:1}100%{transform:scale(1) translateY(0);opacity:1}}
+/* ===== 揭卡動畫 stage ===== */
+.card-stage{position:relative;width:100%;max-width:480px;height:300px;margin:0 auto 8px}
+.scard{position:absolute;left:50%;top:14px;width:158px;height:222px;margin-left:-79px;perspective:900px;opacity:0;transition:transform .6s cubic-bezier(.2,.9,.3,1.1),opacity .3s}
+.card-stage .scard.in-stack{opacity:1;transform:translateY(0) rotate(0) scale(1)}
+.card-stage .scard.in-stack:hover{cursor:pointer}
+.scard .card-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,0,.2,1)}
+.scard.revealed{opacity:1}
+.scard.revealed .card-inner{transform:rotateY(180deg)}
+/* 卡堆疊 offset — 每張卡微偏移營造疊放感 */
+.card-stage .scard.in-stack:nth-child(1){transform:translate(-2px,1px) rotate(-1.2deg)}
+.card-stage .scard.in-stack:nth-child(2){transform:translate(1px,-1px) rotate(.8deg)}
+.card-stage .scard.in-stack:nth-child(3){transform:translate(3px,2px) rotate(1.6deg)}
+.card-stage .scard.in-stack:nth-child(4){transform:translate(-3px,-2px) rotate(-1.8deg)}
+.card-stage .scard.in-stack:nth-child(5){transform:translate(2px,3px) rotate(.4deg)}
+/* 移入 cards-row 後：static 定位 + 縮細（5 張排得落） */
+#cardsRow .scard{position:relative;left:auto;top:auto;margin-left:0;flex-shrink:0;width:108px;height:152px}
+#cardsRow .scard .card-face{border-radius:8px;border-width:2px}
+#cardsRow .scard .cf-name{font-size:9px}
+#cardsRow .scard .cf-name small{font-size:5px}
+#cardsRow .scard .cf-hp{font-size:7px}
+#cardsRow .scard .cf-img{margin:1px 0}
+#cardsRow .scard .type-tag{font-size:5.5px;padding:0 3px}
+#cardsRow .scard .cf-foot .rarity-badge{font-size:6px;padding:0 4px}
+#cardsRow .scard .cf-set{font-size:5px}
+#cardsRow .scard .sparkle i{font-size:8px}
+#cardsRow .scard .new-tag{font-size:9px;padding:2px 7px;top:-7px;right:-7px}
+/* 光芒預兆 */
+.card-stage::before{content:'';position:absolute;left:50%;top:50%;width:180px;height:260px;transform:translate(-50%,-50%) scale(.7);border-radius:18px;opacity:0;pointer-events:none;transition:opacity .5s}
+.card-stage.glow-gold::before{opacity:1;background:radial-gradient(ellipse at center,rgba(255,215,0,.65),rgba(255,180,0,.25) 55%,transparent 75%);animation:glowPulse 1.4s ease-in-out infinite;box-shadow:0 0 60px rgba(255,215,0,.5)}
+.card-stage.glow-rainbow::before{opacity:1;background:radial-gradient(ellipse at center,rgba(255,255,255,.5),transparent 70%);animation:glowRainbow 2.2s linear infinite;box-shadow:0 0 60px rgba(255,215,0,.4)}
+@keyframes glowPulse{0%,100%{transform:translate(-50%,-50%) scale(.75);opacity:.55}50%{transform:translate(-50%,-50%) scale(.95);opacity:1}}
+@keyframes glowRainbow{0%,100%{filter:hue-rotate(0)}50%{filter:hue-rotate(180deg)}}
+/* God Pack 全屏金光 */
+.god-flood{position:fixed;inset:0;z-index:350;pointer-events:none;background:radial-gradient(ellipse at center,rgba(255,215,0,.55),rgba(255,180,0,.15) 45%,transparent 75%);opacity:0;transition:opacity .6s}
+.god-flood.on{opacity:1;animation:glowPulse 1.6s ease-in-out infinite}
+/* NEW 標籤 */
+.new-tag{position:absolute;top:-10px;right:-10px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;font-size:11px;font-weight:900;padding:4px 10px;border-radius:10px;box-shadow:0 3px 10px rgba(34,197,94,.5);z-index:20;transform:rotate(8deg);letter-spacing:1px;animation:newPop .5s cubic-bezier(.2,1.4,.3,1)}
+@keyframes newPop{0%{transform:rotate(8deg) scale(0)}70%{transform:rotate(8deg) scale(1.25)}100%{transform:rotate(8deg) scale(1)}}
 .card-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,0,.2,1)}
 .card.flipped .card-inner{transform:rotateY(180deg)}
 .card-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:12px;overflow:hidden}
@@ -119,6 +157,46 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .sparkle i:nth-child(3){top:38%;left:60%;animation-delay:.8s;font-size:11px}
 .sparkle i:nth-child(4){top:80%;left:20%;animation-delay:1.1s;font-size:9px}
 @keyframes spk{0%,100%{opacity:0;transform:scale(.4) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(20deg)}}
+/* ===== 稀有度視覺特效 fx ===== */
+/* Holo：彩虹光澤掃過 + 傾斜移動 */
+.fx-holo .cf-img{position:relative}
+.fx-holo .cf-img::after{content:'';position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.65) 45%,rgba(255,215,0,.4) 50%,rgba(80,220,255,.5) 55%,transparent 70%);background-size:250% 250%;animation:holoSheen 3.2s linear infinite;mix-blend-mode:screen;pointer-events:none;border-radius:8px}
+@keyframes holoSheen{0%{background-position:0% 0%}100%{background-position:250% 250%}}
+.fx-holo .cf-img img{filter:contrast(1.05) saturate(1.2)}
+/* Full Art：邊框消失、圖像佔滿 */
+.fx-fullart .card-face{border:none !important}
+.fx-fullart .cf-img{background:none;margin:0;border-radius:0}
+.fx-fullart .cf-img img{max-width:110%;max-height:115%;border-radius:0}
+.fx-fullart .cf-top,.fx-fullart .cf-types,.fx-fullart .cf-foot{position:absolute;z-index:5}
+.fx-fullart .cf-top{top:4px;left:6px;right:6px;text-shadow:0 1px 3px rgba(255,255,255,.8)}
+.fx-fullart .cf-types{bottom:22px;left:6px}
+.fx-fullart .cf-foot{bottom:4px;left:6px;right:6px;background:linear-gradient(transparent,rgba(255,255,255,.75));padding:8px 4px 2px;border-radius:0 0 10px 10px}
+.fx-fullart .cf-img::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(255,255,255,.35),transparent 60%);z-index:2;pointer-events:none}
+/* Immersive：3D 景深 + 傾斜 */
+.fx-immersive .card-front{background:linear-gradient(160deg,#1a1a3e,#0d0d22)}
+.fx-immersive .cf-img{background:none;margin:0;border-radius:0}
+.fx-immersive .cf-img img{max-width:118%;max-height:120%;border-radius:0;transition:transform .3s}
+.fx-immersive .cf-name,.fx-immersive .cf-hp{color:#ffd700;text-shadow:0 0 8px rgba(255,215,0,.5)}
+.fx-immersive .cf-img::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(10,10,30,.7));pointer-events:none;z-index:2}
+.fx-immersive.tilt .card-inner{transform:rotateY(180deg) rotateX(6deg) rotateY(-8deg)}
+/* Gold：金色金屬質感 + 邊框光澤 */
+.fx-gold .card-front{border:3px solid #ffd700 !important;background:linear-gradient(150deg,#fff8e1,#f5e6b8);box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 26px rgba(255,215,0,.65),inset 0 0 18px rgba(255,215,0,.35)}
+.fx-gold .cf-name{color:#8a6d00}
+.fx-gold .cf-img::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 25%,rgba(255,235,150,.6),transparent 55%);mix-blend-mode:overlay;pointer-events:none;animation:goldShine 2.6s ease-in-out infinite;border-radius:8px}
+@keyframes goldShine{0%,100%{opacity:.6;transform:translateX(0)}50%{opacity:1;transform:translateX(6px)}}
+.fx-gold .rarity-badge{background:linear-gradient(135deg,#ffd700,#b8860b);color:#3a2a00;box-shadow:0 0 8px rgba(255,215,0,.8)}
+/* Crown：彩虹光爆 + 星星粒子 */
+.fx-crown .card-front{border:3px solid transparent !important;background:linear-gradient(150deg,#fff,#f3e8ff) padding-box,linear-gradient(45deg,#ff004c,#ff9a00,#ffee00,#00d26a,#0090ff,#b200ff,#ff004c) border-box;background-size:100% 100%,400% 400%;animation:rainbow 2.5s linear infinite;box-shadow:0 10px 34px rgba(0,0,0,.5),0 0 32px rgba(168,85,247,.7)}
+.fx-crown .cf-img::after{content:'';position:absolute;inset:0;background:conic-gradient(from 0deg,rgba(255,0,76,.25),rgba(255,154,0,.25),rgba(0,210,106,.25),rgba(0,144,255,.25),rgba(178,0,255,.25),rgba(255,0,76,.25));mix-blend-mode:screen;animation:spin 3s linear infinite;pointer-events:none;border-radius:8px}
+.fx-crown .cf-name{color:#6d28d9;text-shadow:0 0 10px rgba(168,85,247,.6)}
+.fx-crown .rarity-badge{background:linear-gradient(90deg,#ff004c,#ff9a00,#ffee00,#00d26a,#0090ff,#b200ff);color:#fff;animation:rainbow 2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* 翻開瞬間粒子爆（gold/crown） */
+.fx-burst{position:absolute;inset:0;pointer-events:none;z-index:15;border-radius:12px;overflow:hidden}
+.fx-burst i{position:absolute;width:8px;height:8px;border-radius:50%;background:#ffd700;animation:fxBurst .9s ease-out forwards}
+.fx-burst i:nth-child(2n){background:#ff9a00;width:6px;height:6px}
+.fx-burst i:nth-child(3n){background:#fff;width:5px;height:5px}
+@keyframes fxBurst{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--bx),var(--by)) scale(0);opacity:0}}
 /* buttons */
 .btn-primary{background:linear-gradient(135deg,#ff5a2e,#c41e3a);color:#fff;border:none;padding:14px 36px;border-radius:28px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 6px 20px rgba(227,53,13,.45);transition:all .25s;letter-spacing:1px;min-height:48px}
 .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(227,53,13,.6)}
@@ -250,12 +328,16 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
   <!-- RESULT -->
   <div class="result" id="viewResult">
     <div class="pack-dots" id="packDots"></div>
-    <div class="cards-row" id="cardsRow"></div>
+    <div class="card-stage" id="cardStage"></div>
+    <div class="cards-row" id="cardsRow" style="display:none"></div>
     <div class="result-actions">
       <button class="btn-ghost" onclick="showView('dex')">睇圖鑑</button>
       <button class="btn-primary" onclick="openPack()">再開一包</button>
     </div>
   </div>
+
+  <!-- God Pack 全屏金光 -->
+  <div class="god-flood" id="godFlood"></div>
 
   <!-- DEX PAGE -->
   <div class="dex-page" id="viewDex">
@@ -375,20 +457,33 @@ function weightedPick(weights){
   return parseInt(keys[keys.length-1]);
 }
 function drawCards(){
+  // God Pack：1/100,000 — 5 張全高稀有（tier 3 或 shiny 或 crown）
+  const isGod = Math.random() < 0.00001;
   const out = [];
   const tiersByCard = {0:[],1:[],2:[],3:[]};
   CARDS.forEach(c=>tiersByCard[c.tier].push(c));
   for(let i=0;i<5;i++){
     // position-based weights
     let w;
-    if(i<3) w = {0:58,1:30,2:10,3:2};
+    if(isGod) w = {0:0,1:0,2:60,3:40};
+    else if(i<3) w = {0:58,1:30,2:10,3:2};
     else if(i===3) w = {0:32,1:36,2:24,3:8};
     else w = {0:18,1:30,2:38,3:14};
     const tier = weightedPick(w);
     const poolArr = tiersByCard[tier];
     const c = poolArr[Math.floor(Math.random()*poolArr.length)];
-    const shiny = Math.random() < 0.04;
-    out.push({...c, shiny, uid: Date.now()+'_'+i});
+    const shiny = Math.random() < (isGod ? 0.6 : 0.04);
+    const card = {...c, shiny, uid: Date.now()+'_'+i};
+    // 稀有度視覺特效（fx）
+    //   none=普通  holo=彩虹光澤  fullart=無邊框  immersive=3D景深
+    //   gold=金卡  crown=皇冠（☆☆☆）
+    if(isGod) card.fx = Math.random() < 0.3 ? 'crown' : (shiny ? 'gold' : 'fullart');
+    else if(shiny && tier===3) card.fx = Math.random() < 0.35 ? 'crown' : 'gold';
+    else if(shiny) card.fx = 'holo';
+    else if(tier===3) card.fx = 'immersive';
+    else if(tier===2) card.fx = 'fullart';
+    else card.fx = 'none';
+    out.push(card);
   }
   return out;
 }
@@ -496,10 +591,12 @@ function openPack(){
   }, 620);
 }
 
-// ===== RENDER RESULT =====
+// ===== RENDER RESULT (揭卡動畫) =====
 function renderResult(){
+  const stage=document.getElementById('cardStage');
   const row=document.getElementById('cardsRow');
-  row.innerHTML='';
+  stage.innerHTML='';
+  row.innerHTML=''; row.style.display='none';
   // 分頁指示器：5 粒點
   const dots=document.getElementById('packDots');
   dots.innerHTML='';
@@ -508,24 +605,8 @@ function renderResult(){
     d.className='dot';
     dots.appendChild(d);
   }
-  currentCards.forEach((c,i)=>{
-    const d=document.createElement('div');
-    d.className='card';
-    d.innerHTML = cardHTML(c, 'back');
-    row.appendChild(d);
-    setTimeout(()=>{ d.classList.add('pop'); SFX.pop(i); }, 200+i*170);
-    d.addEventListener('click', ()=>{
-      if(d.classList.contains('flipped')) return;
-      SFX.flip();
-      d.classList.add('flipped');
-      d.querySelector('.card-face').outerHTML = cardHTML(c,'front');
-      d.querySelector('.card-front').style.transform='rotateY(0deg)';
-      // 對應分頁點著燈
-      const ds=dots.children;
-      if(ds[i]) ds[i].classList.add('on');
-    });
-  });
-  // add to collection
+  // 收集登錄（翻開前先計 NEW）
+  const isNew = currentCards.map(c => !collection[String(c.id)]);
   currentCards.forEach(c=>{
     const key = String(c.id);
     const cur = collection[key] || {shiny:false,count:0};
@@ -536,15 +617,106 @@ function renderResult(){
   stats.packs++;
   saveState();
   updateStats();
-  // celebrate if any rare+
-  const hasRare = currentCards.some(c=>c.shiny || c.tier>=2);
+
+  // God Pack 判定
+  const isGod = currentCards.every(c => c.tier>=2);
+  const godFlood=document.getElementById('godFlood');
+  if(isGod){ godFlood.classList.add('on'); SFX.ultra(); }
+
+  // 光芒預兆：包內有高稀有（gold/crown/ultra）→ 卡堆透光
+  const hasCrown = currentCards.some(c=>c.fx==='crown');
+  const hasGold  = currentCards.some(c=>c.fx==='gold'||c.fx==='crown');
   const hasUltra = currentCards.some(c=>c.tier===3 || c.shiny);
+  if(hasGold){ stage.classList.add('glow-rainbow'); }
+  else if(hasUltra){ stage.classList.add('glow-gold'); }
+
+  // 建立卡堆：5 張背面朝上疊放（順序 0 底 → 4 頂）
+  // cardHTML(c,'back') 已含 card-inner（back+front 兩面）
+  const cards = currentCards.map((c,i)=>{
+    const d=document.createElement('div');
+    d.className='scard';
+    d.dataset.i=i;
+    d.innerHTML = cardHTML(c,'back');
+    d.querySelector('.card-front').classList.add('fx-'+c.fx);
+    stage.appendChild(d);
+    // 下一幀加 in-stack（觸發進場）
+    requestAnimationFrame(()=>requestAnimationFrame(()=>d.classList.add('in-stack')));
+    return d;
+  });
+  // 卡堆進場音效
+  setTimeout(()=>{ SFX.pop(0); }, 150);
+
+  // 逐張翻開：由頂（4）→ 底（0）
+  const order = [4,3,2,1,0];
+  const dur = 620;  // 每張間隔
+  order.forEach((idx, step)=>{
+    setTimeout(()=>{
+      const d = cards[idx];
+      const c = currentCards[idx];
+      // 翻開：rotateY 180
+      d.classList.remove('in-stack');
+      d.classList.add('revealed');
+      // 啪聲 + 稀有度音效
+      if(c.fx==='crown'){ SFX.ultra(); burstFx(d, 18); }
+      else if(c.fx==='gold'){ SFX.ultra(); burstFx(d, 12); }
+      else if(c.fx==='holo' || c.fx==='immersive'){ SFX.rare(); }
+      else if(c.fx==='fullart'){ SFX.flip(); }
+      else { SFX.pop(idx); }
+      // 分頁點著燈
+      const ds=dots.children;
+      if(ds[idx]) ds[idx].classList.add('on');
+      // NEW 標籤（未收集）
+      if(isNew[idx]){
+        const tag=document.createElement('div');
+        tag.className='new-tag';
+        tag.textContent='NEW';
+        d.appendChild(tag);
+      }
+      // 翻開後移到 cards-row（flex 橫排）— 保留 revealed（flip 狀態）
+      setTimeout(()=>{
+        d.style.position='relative';
+        d.style.left='auto'; d.style.top='auto';
+        d.style.margin='0';
+        d.classList.remove('in-stack');
+        d.style.transition='none';
+        row.appendChild(d);
+        row.style.display='flex';
+        d.style.opacity='1';
+        requestAnimationFrame(()=>{ d.style.transition=''; });
+      }, dur*0.75);
+    }, 200 + step*dur);
+  });
+
+  // 全部翻開後
+  const totalT = 200 + 5*dur;
   setTimeout(()=>{
-    if(hasUltra){ SFX.ultra(); celebrate(60); }
-    else if(hasRare){ SFX.rare(); celebrate(24); }
-  }, 1400);
+    // God Pack 收尾
+    if(isGod){ setTimeout(()=>godFlood.classList.remove('on'), 1600); celebrate(80); }
+    else if(hasCrown){ celebrate(70); }
+    else if(hasGold){ celebrate(45); }
+    else if(hasUltra){ celebrate(30); }
+    else if(currentCards.some(c=>c.fx==='fullart')){ celebrate(18); }
+  }, totalT+400);
   // 成就檢查
-  setTimeout(()=>checkAchievements(), 2000);
+  setTimeout(()=>checkAchievements(), totalT+1500);
+}
+
+// 翻開瞬間粒子爆
+function burstFx(cardEl, n){
+  const b=document.createElement('div');
+  b.className='fx-burst';
+  for(let i=0;i<n;i++){
+    const p=document.createElement('i');
+    const ang=Math.random()*Math.PI*2, dist=40+Math.random()*80;
+    p.style.setProperty('--bx', Math.cos(ang)*dist+'px');
+    p.style.setProperty('--by', Math.sin(ang)*dist+'px');
+    p.style.left=(50+Math.random()*10)+'%';
+    p.style.top=(30+Math.random()*40)+'%';
+    p.style.animationDelay=(Math.random()*.15)+'s';
+    b.appendChild(p);
+  }
+  cardEl.appendChild(b);
+  setTimeout(()=>b.remove(), 1400);
 }
 
 function fallbackImg(el, name){
