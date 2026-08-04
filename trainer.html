@@ -424,16 +424,6 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
       <span>已開 <b id="statPacks">0</b> 包</span>
       <span>收集 <b id="statColl">0</b>/1025</span>
     </div>
-    <div class="pack-select">
-      <div class="ps-row" id="psGenRow"></div>
-      <div class="ps-row" id="psUpRow" style="justify-content:center"></div>
-      <div class="ps-up-hint" id="psUpHint"></div>
-    </div>
-    <div class="pity-bar" id="pityBar" style="display:none">
-      <span>保底</span>
-      <div class="pity-track"><div class="pity-fill" id="pityFill"></div></div>
-      <b id="pityTxt">0/40</b>
-    </div>
     <div class="pack-wrap" id="packWrap">
       <div class="burst" id="burst"></div>
       <div class="pack" id="pack">
@@ -451,6 +441,16 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
       <div class="trail" id="trail"></div>
     </div>
     <div class="swipe-hint" id="swipeHint">👆 橫掃或點擊卡包開啟</div>
+    <div class="pack-select">
+      <div class="ps-row" id="psGenRow"></div>
+      <div class="ps-row" id="psUpRow" style="justify-content:center"></div>
+      <div class="ps-up-hint" id="psUpHint"></div>
+    </div>
+    <div class="pity-bar" id="pityBar" style="display:none">
+      <span>保底</span>
+      <div class="pity-track"><div class="pity-fill" id="pityFill"></div></div>
+      <b id="pityTxt">0/40</b>
+    </div>
   </div>
 
   <!-- RESULT -->
@@ -913,17 +913,18 @@ function renderResult(){
   // 逐張翻開：由頂（4）→ 底（0）
   const order = [4,3,2,1,0];
   const dur = 620;  // 每張間隔
-  // 下方臨時位置（不重疊）
+  // 下方臨時位置：疊成一疊（後揭嘅卡疊喺上一張上面）
   const tmpY = 260;  // 向下偏移
-  const tmpX = [ -74, -24, 26, -50, 0 ];  // 每張唔同 X 偏移
+  const tmpX = [ -7, 6, -5, 7, 0 ];  // 輕微錯位，形成一疊卡
   order.forEach((idx, step)=>{
     setTimeout(()=>{
       const d = cards[idx];
       const c = currentCards[idx];
-      // 翻開 + 飛去下方位置
+      // 翻開 + 飛去下方疊卡位置
       d.classList.remove('in-stack');
       d.classList.add('revealed');
       d.style.transition='transform .55s cubic-bezier(.2,.9,.3,1.1),opacity .3s';
+      d.style.zIndex = 50 - idx;   // 後揭嘅卡（idx 細）疊喺上面
       d.style.transform=`translateX(${tmpX[idx]}px) translateY(${tmpY}px)`;
       // 啪聲 + 稀有度音效
       if(c.fx==='crown'){ SFX.ultra(); burstFx(d, 18); }
