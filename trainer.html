@@ -809,23 +809,34 @@ function renderResult(){
         tag.textContent='NEW';
         d.appendChild(tag);
       }
-      // 翻開後移到 cards-row（flex 橫排）— 保留 revealed（flip 狀態）
-      setTimeout(()=>{
-        d.style.position='relative';
-        d.style.left='auto'; d.style.top='auto';
-        d.style.margin='0';
-        d.classList.remove('in-stack');
-        d.style.transition='none';
-        row.appendChild(d);
-        row.style.display='flex';
-        d.style.opacity='1';
-        requestAnimationFrame(()=>{ d.style.transition=''; });
-      }, dur*0.75);
     }, 200 + step*dur);
   });
 
-  // 全部翻開後
+  // 全部翻開後，等 2 秒，然後一齊飛去 cards-row
   const totalT = 200 + 5*dur;
+  const flyT = totalT + 2000;   // 等 2 秒先飛
+  const landT = flyT + 650;     // 飛 650ms 落地
+  setTimeout(()=>{
+    // 一齊飛去 row（動畫）
+    cards.forEach((d, i)=>{
+      d.style.transition='transform .55s cubic-bezier(.2,1.1,.3,1),opacity .3s';
+      d.style.transform='';
+    });
+    setTimeout(()=>{
+      cards.forEach(d=>{
+        d.style.position='relative';
+        d.style.left='auto'; d.style.top='auto';
+        d.style.margin='0';
+        d.style.transform='';
+        d.style.transition='';
+        row.appendChild(d);
+        row.style.display='flex';
+        d.style.opacity='1';
+      });
+    }, 650);
+  }, flyT);
+
+  // 全部翻開後（落地先 celebrate）
   setTimeout(()=>{
     // God Pack 收尾
     if(isGod){ setTimeout(()=>godFlood.classList.remove('on'), 1600); celebrate(80); }
@@ -833,9 +844,9 @@ function renderResult(){
     else if(hasGold){ celebrate(45); }
     else if(hasUltra){ celebrate(30); }
     else if(currentCards.some(c=>c.fx==='fullart')){ celebrate(18); }
-  }, totalT+400);
+  }, landT+400);
   // 成就檢查
-  setTimeout(()=>checkAchievements(), totalT+1500);
+  setTimeout(()=>checkAchievements(), landT+1500);
 }
 
 // 翻開瞬間粒子爆
