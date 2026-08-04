@@ -62,8 +62,8 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .half-left,.half-right{position:absolute;top:0;bottom:0;width:50%;overflow:hidden;pointer-events:none;opacity:0;will-change:transform,opacity}
 .half-left{left:0;border-radius:18px 0 0 18px}
 .half-right{right:0;border-radius:0 18px 18px 0}
-.tearing .half-left{animation:tearL .55s cubic-bezier(.5,.05,.7,.4) forwards}
-.tearing .half-right{animation:tearR .55s cubic-bezier(.5,.05,.7,.4) forwards}
+.tearing .half-left{animation:tearL .55s cubic-bezier(.34,1.56,.64,1) forwards}
+.tearing .half-right{animation:tearR .55s cubic-bezier(.34,1.56,.64,1) forwards}
 @keyframes tearL{to{transform:translateX(-140%) rotate(-18deg);opacity:0}}
 @keyframes tearR{to{transform:translateX(140%) rotate(18deg);opacity:0}}
 .burst{position:absolute;left:50%;top:50%;width:340px;height:340px;transform:translate(-50%,-50%) scale(0);background:radial-gradient(circle,rgba(255,215,0,.85) 0%,rgba(255,140,0,.5) 35%,transparent 70%);border-radius:50%;pointer-events:none;opacity:0;z-index:3}
@@ -79,12 +79,20 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .ps-chip.up{background:rgba(255,215,0,.1);border-color:rgba(255,215,0,.45);color:#ffd700}
 .ps-chip.up.on{background:linear-gradient(135deg,#ffd700,#ff8c00);border-color:#ffd700;color:#222;box-shadow:0 3px 12px rgba(255,215,0,.45)}
 .ps-up-hint{text-align:center;color:rgba(255,215,0,.75);font-size:11.5px;min-height:16px;font-weight:600}
-/* 保底進度 */
-.pity-bar{width:100%;max-width:300px;margin:10px auto 0;display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,.55)}
-.pity-track{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
+/* 保底進度（三款） */
+.pity-bar{width:100%;max-width:340px;margin:10px auto 0;display:flex;gap:6px;font-size:10px;color:rgba(255,255,255,.55)}
+.pity-item{flex:1;display:flex;flex-direction:column;gap:3px;align-items:center}
+.pity-item span{font-size:9.5px}
+.pity-track{width:100%;height:5px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}
 .pity-fill{height:100%;width:0;background:linear-gradient(90deg,#ffd700,#ff8c00);transition:width .3s}
-.pity-bar b{color:#ffd700;font-size:12px}
-.pity-bar.got-cheap b{color:#ff8c00}
+.pity-fill.pink{background:linear-gradient(90deg,#ff7ab8,#f85888)}
+.pity-fill.green{background:linear-gradient(90deg,#4ade80,#16a34a)}
+.pity-item b{color:#ffd700;font-size:10.5px}
+.pity-item:nth-child(2) b{color:#ff7ab8}
+.pity-item:nth-child(3) b{color:#4ade80}
+/* 卡包震動（期待感） */
+@keyframes packShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px) rotate(-1deg)}75%{transform:translateX(3px) rotate(1deg)}}
+.pack.shaking{animation:packShake .3s ease-in-out}
 .trail{position:absolute;top:50%;height:5px;border-radius:3px;background:linear-gradient(90deg,transparent,#ffd700,transparent);opacity:0;pointer-events:none;width:200px;transform:translate(-50%,-50%)}
 /* cards result */
 .result{display:none;min-height:calc(100vh - 90px);flex-direction:column;align-items:center;padding:22px 14px 20px}
@@ -284,6 +292,9 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .dex-search::placeholder{color:rgba(255,255,255,.4)}
 .dex-search:focus{border-color:#ffd700}
 .sub-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;min-height:38px}
+.collect-row{display:flex;gap:8px;margin-bottom:12px;min-height:38px}
+.sort-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;min-height:38px}
+.sort-row .slab{font-size:11px;color:rgba(255,255,255,.5);font-weight:700;align-self:center}
 .dex-grid{position:relative;display:block;width:100%;margin-top:6px}
 .dex-slot{position:absolute;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.18);font-size:13px;cursor:default}
 .dex-slot.owned{border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);cursor:pointer;transition:transform .2s}
@@ -452,9 +463,9 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
       <div class="ps-up-hint" id="psUpHint"></div>
     </div>
     <div class="pity-bar" id="pityBar" style="display:none">
-      <span>保底</span>
-      <div class="pity-track"><div class="pity-fill" id="pityFill"></div></div>
-      <b id="pityTxt">0/40</b>
+      <div class="pity-item"><span>超稀有</span><div class="pity-track"><div class="pity-fill" id="pityFillT3"></div></div><b id="pityTxtT3">0/40</b></div>
+      <div class="pity-item"><span>閃光</span><div class="pity-track"><div class="pity-fill pink" id="pityFillSh"></div></div><b id="pityTxtSh">0/30</b></div>
+      <div class="pity-item"><span>新卡</span><div class="pity-track"><div class="pity-fill green" id="pityFillNew"></div></div><b id="pityTxtNew">0/10</b></div>
     </div>
   </div>
 
@@ -465,6 +476,7 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
     <div class="cards-row" id="cardsRow" style="display:none"></div>
     <div class="result-actions">
       <button class="btn-ghost" onclick="showView('dex')">睇圖鑑</button>
+      <button class="btn-ghost" onclick="replayPack()">↻ 重播</button>
       <button class="btn-primary" onclick="openPack()">再開一包</button>
     </div>
   </div>
@@ -479,11 +491,13 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
       <div class="progress-bar"><div class="progress-fill" id="dexFill"></div></div>
     </div>
     <div class="gen-progress" id="genProgress"></div>
+    <div class="collect-row" id="collectRow"></div>
     <div class="filter-row" id="filterRow"></div>
     <div class="search-row">
       <input type="search" id="dexSearch" class="dex-search" placeholder="🔍 搜尋寶可夢名稱…" autocomplete="off">
     </div>
     <div class="sub-filter-row" id="subFilterRow"></div>
+    <div class="sort-row" id="sortRow"></div>
     <div class="dex-grid" id="dexGrid"></div>
     <div class="dex-note">收集全部 1025 隻寶可夢（關都至帕底亞，9 代全收錄）！閃光版唔另計進度</div>
   </div>
@@ -514,6 +528,7 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
     <div class="gen-stats" id="genStats"></div>
     <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap">
       <button class="btn-ghost" style="font-size:12px;padding:9px 16px" onclick="shareImage()">🖼️ 分享</button>
+      <button class="btn-ghost" style="font-size:12px;padding:9px 16px" onclick="copyShareLink()">🔗 分享連結</button>
       <button class="btn-ghost" style="font-size:12px;padding:9px 16px" onclick="exportData()">⬇️ 匯出</button>
       <button class="btn-ghost" style="font-size:12px;padding:9px 16px" onclick="document.getElementById('importFile').click()">⬆️ 匯入</button>
       <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importData(this)">
@@ -630,7 +645,9 @@ function genOf(id){
 }
 // 各世代 UP 池：該代最強 5 張（tier3 優先，最高 HP）——機率大幅提升
 const UP_POOLS = {"1":[151,150,146,145,144],"2":[251,250,249,244,245],"3":[384,377,382,380,381],"4":[486,484,487,483,485],"5":[641,644,646,643,649],"6":[720,721,716,717,718],"7":[785,791,792,799,797],"8":[890,892,898,894,895],"9":[1011,1014,1003,1013,1001]};
-const PITY_LIMIT = 40;   // 40 包冇中 t3/shiny → 保底
+const PITY_LIMIT = 40;        // 40 包冇中 t3 → 第 5 張必定 t3
+const PITY_LIMIT_SHINY = 30;  // 30 包冇中閃光 → 第 4 張必定閃光
+const PITY_LIMIT_NEW = 10;    // 10 包冇中未收集 → 第 3 張必定未收集
 let selGen = 0;          // 0=全部 1-9=分代
 let upMode = false;      // UP 池開關
 
@@ -643,15 +660,15 @@ let busy = false;
 const FILTERS = [['all','全部'],['t0','普通'],['t1','罕見'],['t2','稀有'],['t3','超稀有'],['shiny','閃光']];
 
 function loadState(){
-  // v2 壓縮格式：c=[[id,count,shiny],...]（比 v1 object 細 ~3 倍）
+  // v2 壓縮格式：c=[[id,count,shiny,t],...]（比 v1 object 細 ~3 倍）
   try{
     const raw = localStorage.getItem('ptcg_trainer_v2');
     if(raw){
       const s = JSON.parse(raw);
       if(s && s.v===2 && Array.isArray(s.c)){
         collection = {};
-        s.c.forEach(a=>{ collection[String(a[0])] = {shiny:!!a[2], count:a[1]||1}; });
-        stats = Object.assign({packs:0, pity:0}, s.s||{});
+        s.c.forEach(a=>{ collection[String(a[0])] = {shiny:!!a[2], count:a[1]||1, t:a[3]||0}; });
+        stats = Object.assign({packs:0, pity:0, pityShiny:0, pityNew:0}, s.s||{});
         coins = s.k ?? 1;
         localStorage.removeItem('ptcg_trainer_v1');   // 遷移完成清舊格式
         return;
@@ -663,24 +680,24 @@ function loadState(){
     const s = JSON.parse(localStorage.getItem('ptcg_trainer_v1'));
     if(s){
       collection = s.collection || {};
-      stats = Object.assign({packs:0, pity:0}, s.stats||{});
+      stats = Object.assign({packs:0, pity:0, pityShiny:0, pityNew:0}, s.stats||{});
       coins = s.coins ?? 1;
       saveState();
       localStorage.removeItem('ptcg_trainer_v1');
       return;
     }
   }catch(e){}
-  coins = 1; stats = {packs:0, pity:0};
+  coins = 1; stats = {packs:0, pity:0, pityShiny:0, pityNew:0};
 }
 function saveState(){
   try{
     const c = [];
     for(const k in collection){
       const v = collection[k];
-      c.push([Number(k), v.count||1, v.shiny?1:0]);
+      c.push([Number(k), v.count||1, v.shiny?1:0, v.t||0]);
     }
     localStorage.setItem('ptcg_trainer_v2',
-      JSON.stringify({v:2, c, s:{packs:stats.packs||0, pity:stats.pity||0}, k:coins}));
+      JSON.stringify({v:2, c, s:{packs:stats.packs||0, pity:stats.pity||0, pityShiny:stats.pityShiny||0, pityNew:stats.pityNew||0}, k:coins}));
   }catch(e){}
 }
 
@@ -710,31 +727,45 @@ function drawCards(){
     tiersByCard[c.tier].push(c);
     if(upSet && upSet.has(c.id)) upByTier[c.tier].push(c);
   });
-  // 保底：連續 40 包冇中 t3/shiny → 第 5 張必定 t3
-  const pityDue = (stats.pity||0) >= PITY_LIMIT;
+  // 三款保底：超稀有40 / 閃光30 / 未收集10（各自獨立計數）
+  const forceT3 = (stats.pity||0) >= PITY_LIMIT;
+  const forceShiny = (stats.pityShiny||0) >= PITY_LIMIT_SHINY;
+  const forceNew = (stats.pityNew||0) >= PITY_LIMIT_NEW;
+  const uncollectedPool = pool.filter(c=>!collection[String(c.id)]);
+  const anyUncollected = uncollectedPool.length>0 || CARDS.some(c=>!collection[String(c.id)]);
   for(let i=0;i<5;i++){
     // position-based weights
     let w;
     if(isGod) w = {0:0,1:0,2:60,3:40};
-    else if(pityDue && i===4) w = {0:0,1:0,2:0,3:100};   // 保底：第 5 張必定 t3（池冇 t3 會自動退 t2）
     else if(i<3) w = {0:58,1:30,2:10,3:2};
     else if(i===3) w = {0:32,1:36,2:24,3:8};
     else w = {0:18,1:30,2:38,3:14};
     let tier = weightedPick(w);
+    let c = null;
+    // 超稀有保底 → 第 5 張必定 t3
+    if(forceT3 && i===4 && tiersByCard[3].length){ tier = 3; }
+    // 新卡保底 → 第 3 張抽未收集（池內冇就全池搵）
+    if(forceNew && i===2 && anyUncollected){
+      const un = uncollectedPool.length ? uncollectedPool : CARDS.filter(x=>!collection[String(x.id)]);
+      c = un[Math.floor(Math.random()*un.length)];
+      tier = c.tier;
+    }
     // 該 tier 冇卡（例如細池）→ 向下退一級
-    if(!tiersByCard[tier] || !tiersByCard[tier].length){
+    if(!c && (!tiersByCard[tier] || !tiersByCard[tier].length)){
       for(let t=tier-1;t>=0;t--){ if(tiersByCard[t] && tiersByCard[t].length){ tier=t; break; } }
     }
-    const arr = tiersByCard[tier] || [];
-    let c;
-    // UP 池：該 tier 有 UP 卡 → 55% 機率中 UP
-    if(upSet && upByTier[tier].length && Math.random() < 0.55){
-      c = upByTier[tier][Math.floor(Math.random()*upByTier[tier].length)];
-    }else{
-      c = arr[Math.floor(Math.random()*arr.length)];
+    if(!c){
+      const arr = tiersByCard[tier] || [];
+      // UP 池：該 tier 有 UP 卡 → 55% 機率中 UP
+      if(upSet && upByTier[tier].length && Math.random() < 0.55){
+        c = upByTier[tier][Math.floor(Math.random()*upByTier[tier].length)];
+      }else{
+        c = arr[Math.floor(Math.random()*arr.length)];
+      }
     }
     if(!c) continue;
-    const shiny = Math.random() < (isGod ? 0.6 : 0.04);
+    let shiny = Math.random() < (isGod ? 0.6 : 0.04);
+    if(forceShiny && i===3) shiny = true;   // 閃光保底 → 第 4 張必定閃光
     const card = {...c, shiny, uid: Date.now()+'_'+i};
     // 稀有度視覺特效（fx）
     //   none=普通  holo=彩虹光澤  fullart=無邊框  immersive=3D景深
@@ -784,6 +815,9 @@ function initSwipe(){
     sx=t.clientX; sy=t.clientY; dx=0; active=true;
     pack.style.transition='none';
     trail.style.opacity=0;
+    // 期待感：手指掂住卡包時輕微震動
+    pack.classList.add('shaking');
+    setTimeout(()=>pack.classList.remove('shaking'), 320);
   }
   function move(e){
     if(!active||busy) return;
@@ -850,6 +884,7 @@ function openPack(){
   pack.classList.add('tearing');
   document.getElementById('burst').classList.add('on');
   SFX.tear();
+  vib(30);
   // hide original pack body
   document.getElementById('packBody').style.visibility='hidden';
   setTimeout(()=>{
@@ -862,7 +897,7 @@ function openPack(){
 }
 
 // ===== RENDER RESULT (揭卡動畫) =====
-function renderResult(){
+function renderResult(replay){
   const stage=document.getElementById('cardStage');
   const row=document.getElementById('cardsRow');
   stage.innerHTML='';
@@ -875,22 +910,26 @@ function renderResult(){
     d.className='dot';
     dots.appendChild(d);
   }
-  // 收集登錄（翻開前先計 NEW）
+  // 收集登錄（翻開前先計 NEW；重播唔再入冊）
   const isNew = currentCards.map(c => !collection[String(c.id)]);
-  currentCards.forEach(c=>{
-    const key = String(c.id);
-    const cur = collection[key] || {shiny:false,count:0};
-    if(c.shiny) cur.shiny=true;
-    cur.count++;
-    collection[key]=cur;
-  });
-  stats.packs++;
-  // 保底計數：包內有 t3/shiny → 重置；冇 → +1
-  const gotRare = currentCards.some(c=>c.tier===3 || c.shiny);
-  stats.pity = gotRare ? 0 : ((stats.pity||0)+1);
-  saveState();
-  updateStats();
-  checkMilestones();
+  if(!replay){
+    currentCards.forEach(c=>{
+      const key = String(c.id);
+      const cur = collection[key] || {shiny:false,count:0,t:0};
+      if(c.shiny) cur.shiny=true;
+      cur.count++;
+      cur.t = Date.now();
+      collection[key]=cur;
+    });
+    stats.packs++;
+    // 三款保底計數（各自獨立）：t3 / shiny / 未收集
+    stats.pity = currentCards.some(c=>c.tier===3) ? 0 : ((stats.pity||0)+1);
+    stats.pityShiny = currentCards.some(c=>c.shiny) ? 0 : ((stats.pityShiny||0)+1);
+    stats.pityNew = isNew.some(Boolean) ? 0 : ((stats.pityNew||0)+1);
+    saveState();
+    updateStats();
+    checkMilestones();
+  }
 
   // God Pack 判定
   const isGod = currentCards.every(c => c.tier>=2);
@@ -936,12 +975,12 @@ function renderResult(){
       d.style.transition='transform .55s cubic-bezier(.2,.9,.3,1.1),opacity .3s';
       d.style.zIndex = 50 - idx;   // 後揭嘅卡（idx 細）疊喺上面
       d.style.transform=`translateX(${tmpX[idx]}px) translateY(${tmpY}px)`;
-      // 啪聲 + 稀有度音效
-      if(c.fx==='crown'){ SFX.ultra(); burstFx(d, 18); }
-      else if(c.fx==='gold'){ SFX.ultra(); burstFx(d, 12); }
-      else if(c.fx==='holo' || c.fx==='immersive'){ SFX.rare(); }
-      else if(c.fx==='fullart'){ SFX.flip(); }
-      else { SFX.pop(idx); }
+      // 啪聲 + 稀有度音效 + 觸覺回饋
+      if(c.fx==='crown'){ SFX.ultra(); burstFx(d, 18); vib([100,50,100,50,200]); }
+      else if(c.fx==='gold'){ SFX.ultra(); burstFx(d, 12); vib([80,40,80]); }
+      else if(c.fx==='holo' || c.fx==='immersive'){ SFX.rare(); vib([40,30,60]); }
+      else if(c.fx==='fullart'){ SFX.flip(); vib(25); }
+      else { SFX.pop(idx); vib(12); }
       // 分頁點著燈
       const ds=dots.children;
       if(ds[idx]) ds[idx].classList.add('on');
@@ -1075,6 +1114,8 @@ function showView(v){
 
 // ===== DEX =====
 let dexFilter='all';
+let collectFilter='all';   // all | owned | unowned
+let sortBy='id';           // id | rarity | name | time
 let genFilter=0;      // 0=全部 1/2/3
 let typeFilter='';    // ''=全部
 let searchQ='';
@@ -1118,9 +1159,46 @@ function initFilters(){
     timer=setTimeout(()=>{ searchQ=box.value.trim(); renderDex(); }, 200);
   });
 }
+function initCollectRow(){
+  const row=document.getElementById('collectRow');
+  if(!row) return;
+  [['all','全部'],['owned','已收集'],['unowned','未收集']].forEach(([k,l])=>{
+    const b=document.createElement('button');
+    b.className='f-btn small'+(k===collectFilter?' active':'');
+    b.textContent=l;
+    b.onclick=()=>{
+      collectFilter=k;
+      row.querySelectorAll('.f-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      renderDex();
+    };
+    row.appendChild(b);
+  });
+}
+function initSortRow(){
+  const row=document.getElementById('sortRow');
+  if(!row) return;
+  const label=document.createElement('span');
+  label.className='slab'; label.textContent='排序';
+  row.appendChild(label);
+  [['id','編號'],['rarity','稀有度'],['name','名稱'],['time','新→舊']].forEach(([k,l])=>{
+    const b=document.createElement('button');
+    b.className='f-btn small'+(k===sortBy?' active':'');
+    b.textContent=l;
+    b.onclick=()=>{
+      sortBy=k;
+      row.querySelectorAll('.f-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      renderDex();
+    };
+    row.appendChild(b);
+  });
+}
 function matchesFilter(c){
   if(dexFilter==='shiny' && !(collection[c.id] && collection[c.id].shiny)) return false;
   if(dexFilter!=='all' && dexFilter!=='shiny' && c.tier !== parseInt(dexFilter[1])) return false;
+  if(collectFilter==='owned' && !collection[c.id]) return false;
+  if(collectFilter==='unowned' && collection[c.id]) return false;
   if(genFilter && genOf(c.id) !== genFilter) return false;
   if(typeFilter && !(c.types||[]).includes(typeFilter)) return false;
   if(searchQ && !c.zh.includes(searchQ)) return false;
@@ -1147,6 +1225,10 @@ function renderDex(){
     if(collection[c.id]) owned++;
     if(matchesFilter(c)) dexFiltered.push(c);
   });
+  // 排序
+  if(sortBy==='rarity'){ dexFiltered.sort((a,b)=>(b.tier-a.tier)||((b.shiny?1:0)-(a.shiny?1:0))); }
+  else if(sortBy==='name'){ dexFiltered.sort((a,b)=>a.zh.localeCompare(b.zh,'zh-Hant')); }
+  else if(sortBy==='time'){ dexFiltered.sort((a,b)=>((collection[b.id]&&collection[b.id].t)||0)-((collection[a.id]&&collection[a.id].t)||0)); }
   document.getElementById('dexCount').textContent = `${owned} / 1025`;
   document.getElementById('dexFill').style.width = (owned/1025*100)+'%';
   renderGenProgress();
@@ -1351,11 +1433,20 @@ function renderPackSelect(){
 function updatePity(){
   const bar=document.getElementById('pityBar');
   if(!bar) return;
-  const p = stats.pity||0;
   bar.style.display = stats.packs>0 ? 'flex' : 'none';
-  document.getElementById('pityFill').style.width = Math.min(100, p/PITY_LIMIT*100)+'%';
-  document.getElementById('pityTxt').textContent = `${p}/${PITY_LIMIT}`;
+  const set=(id,fill,p,lim)=>{ document.getElementById(fill).style.width=Math.min(100,p/lim*100)+'%'; document.getElementById(id).textContent=`${p}/${lim}`; };
+  set('pityTxtT3','pityFillT3',stats.pity||0,PITY_LIMIT);
+  set('pityTxtSh','pityFillSh',stats.pityShiny||0,PITY_LIMIT_SHINY);
+  set('pityTxtNew','pityFillNew',stats.pityNew||0,PITY_LIMIT_NEW);
 }
+function replayPack(){
+  if(!currentCards.length) return;
+  const stage=document.getElementById('cardStage');
+  stage.classList.remove('glow-rainbow','glow-gold');
+  document.getElementById('godFlood').classList.remove('on');
+  renderResult(true);
+}
+function vib(pat){ try{ if(navigator.vibrate) navigator.vibrate(pat); }catch(e){} }
 
 // ===== 分享圖（canvas 生成）=====
 function shareImage(){
@@ -1470,6 +1561,13 @@ function openStats(){
     gs.innerHTML=gh;
   }
   document.getElementById('statsModal').classList.add('show');
+  // 備份提醒（收集 200+ 提示一次）
+  try{
+    if(Object.keys(collection).length>=200 && !localStorage.getItem('ptcg_bak_rmd')){
+      localStorage.setItem('ptcg_bak_rmd','1');
+      setTimeout(()=>toast('💾 已收集 200+ 隻！建議喺統計度「匯出」備份，避免資料遺失'), 800);
+    }
+  }catch(e){}
 }
 function closeStats(){ document.getElementById('statsModal').classList.remove('show'); }
 
@@ -1718,7 +1816,7 @@ function importData(input){
       const d = JSON.parse(r.result);
       if(!d || typeof d!=='object' || !d.collection) throw new Error('格式錯誤');
       collection = d.collection || {};
-      stats = d.stats || {packs:0};
+      stats = Object.assign({packs:0,pity:0,pityShiny:0,pityNew:0}, d.stats||{});
       coins = d.coins ?? 1;
       unlockedIds = new Set(d.achievements || []);
       saveState(); saveAchievements();
@@ -1730,6 +1828,50 @@ function importData(input){
   };
   r.readAsText(f);
   input.value='';
+}
+
+// ===== 分享連結（?data=base64）=====
+function buildShareData(){
+  const cd=[];
+  for(const k in collection) cd.push([+k, collection[k].count||1, collection[k].shiny?1:0]);
+  return {v:2, c:cd, s:{packs:stats.packs||0}, k:coins};
+}
+function shareLinkURL(){
+  const json=JSON.stringify(buildShareData());
+  const b64=btoa(encodeURIComponent(json)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  return location.origin+location.pathname+'?data='+b64;
+}
+function copyShareLink(){
+  const url=shareLinkURL();
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(()=>toast('🔗 分享連結已複製！')).catch(()=>shareLinkFallback(url));
+  }else{
+    shareLinkFallback(url);
+  }
+}
+function shareLinkFallback(url){
+  const ta=document.createElement('textarea');
+  ta.value=url; ta.style.cssText='position:fixed;opacity:0;pointer-events:none';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); toast('🔗 分享連結已複製！'); }
+  catch(e){ window.prompt('複製分享連結', url); }
+  ta.remove();
+}
+function loadShareData(){
+  const m=(location.search.match(/[?&]data=([^&]+)/)||[])[1];
+  if(!m) return;
+  try{
+    const json=decodeURIComponent(atob(m.replace(/-/g,'+').replace(/_/g,'/')));
+    const d=JSON.parse(json);
+    if(d && d.v===2 && Array.isArray(d.c)){
+      collection={};
+      d.c.forEach(a=>{ collection[String(a[0])]={shiny:!!a[2], count:a[1]||1, t:0}; });
+      stats = Object.assign({packs:0,pity:0,pityShiny:0,pityNew:0}, d.s||{});
+      coins = d.k ?? 1;
+      saveState();
+      setTimeout(()=>toast('✅ 已載入分享嘅收藏！'), 600);
+    }
+  }catch(e){}
 }
 
 // ===== ACHIEVEMENTS =====
@@ -1833,7 +1975,10 @@ function closeTutorial(){
 
 // ===== INIT =====
 loadState();
+loadShareData();
 initFilters();
+initCollectRow();
+initSortRow();
 initSwipe();
 initModalSwipe();
 initPackSelect();
