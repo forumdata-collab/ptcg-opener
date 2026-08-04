@@ -19,7 +19,7 @@
 html,body{height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
 background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d1e 100%);color:#fff;overflow-x:hidden;min-height:100vh;touch-action:manipulation}
-.app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:96px}
+.app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:170px}
 /* header */
 .header{display:flex;justify-content:center;align-items:center;padding:12px 14px;background:rgba(0,0,0,.35);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,.08)}
 .header h1{font-size:16px;font-weight:800;background:linear-gradient(90deg,#ffd700,#ff8c00);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.5px;white-space:nowrap}
@@ -185,6 +185,10 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 /* toast */
 .toast{position:fixed;left:50%;top:64px;transform:translateX(-50%) translateY(-20px);background:linear-gradient(135deg,#ffd700,#ff8c00);color:#222;font-weight:800;font-size:14px;padding:12px 22px;border-radius:24px;z-index:600;box-shadow:0 8px 24px rgba(0,0,0,.4);opacity:0;transition:all .35s;pointer-events:none;max-width:86vw;text-align:center}
 .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+/* back to top */
+.back-top{position:fixed;right:16px;bottom:92px;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#ffd700,#ff8c00);color:#222;border:none;font-size:24px;font-weight:900;cursor:pointer;z-index:250;opacity:0;visibility:hidden;transform:translateY(12px);transition:all .3s;box-shadow:0 6px 20px rgba(255,215,0,.45)}
+.back-top.show{opacity:1;visibility:visible;transform:translateY(0)}
+.back-top:active{transform:scale(.92)}
 /* celebration */
 .celebrate{position:fixed;inset:0;pointer-events:none;z-index:400;overflow:hidden}
 .particle{position:absolute;width:8px;height:8px;border-radius:50%;animation:confetti 2.2s ease-out forwards}
@@ -198,7 +202,7 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .tut-box .tut-swipe{font-size:38px;margin:8px 0}
 /* utility */
 .muted{color:rgba(255,255,255,.4)}
-footer.app-footer{text-align:center;padding:20px 20px 26px;margin-top:8px}
+footer.app-footer{text-align:center;padding:20px 20px 150px;margin-top:8px}
 footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bottom:14px;line-height:1.7}
 .kofi-bar{text-align:center}
 .kofi-btn{display:inline-flex;align-items:center;gap:10px;padding:11px 26px;background:#ff5e5b;color:#fff !important;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;font-family:inherit}
@@ -300,6 +304,8 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
   </div>
 </div>
 <div class="celebrate" id="celebrate"></div>
+<!-- 返回頂部 -->
+<button class="back-top" id="backTop" onclick="scrollTopSmooth()" aria-label="返回頂部">↑</button>
 <div class="tutorial" id="tutorial">
   <div class="tut-box">
     <h2>🎮 玩法說明</h2>
@@ -891,6 +897,17 @@ function updateStats(){
   document.getElementById('statPacks').textContent = stats.packs;
   document.getElementById('statColl').textContent = Object.keys(collection).length;
 }
+
+// ===== BACK TO TOP =====
+function scrollTopSmooth(){
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('backTop');
+  if(!btn) return;
+  // 圖鑑頁先顯示（scroll 超過 600px）
+  btn.classList.toggle('show', window.scrollY > 600);
+}, {passive: true});
 
 // ===== TUTORIAL =====
 function closeTutorial(){
