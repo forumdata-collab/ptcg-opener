@@ -650,6 +650,10 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
       <button class="btn-ghost" style="font-size:12px;padding:9px 16px" onclick="document.getElementById('importFile').click()">⬆️ 匯入</button>
       <input type="file" id="importFile" accept=".json,application/json" style="display:none" onchange="importData(this)">
     </div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;align-items:center">
+      <input id="redeemInput" type="text" placeholder="輸入兌換碼" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:8px 14px;color:#fff;font-size:13px;width:130px;outline:none;font-family:inherit" onfocus="this.style.borderColor='rgba(255,215,0,.6)'" onblur="this.style.borderColor='rgba(255,255,255,.2)'">
+      <button class="btn-ghost" style="font-size:12px;padding:8px 14px" onclick="redeemCode()">🎁 兌換碼</button>
+    </div>
     <button class="btn-primary" style="margin-top:14px" onclick="closeStats()">關閉</button>
   </div>
 </div>
@@ -2115,6 +2119,21 @@ function importData(input){
     }
   };
   r.readAsText(f);
+  input.value='';
+}
+
+// ===== 兌換碼 =====
+function redeemCode(){
+  const input=document.getElementById('redeemInput');
+  const code=(input.value||'').trim().toLowerCase();
+  if(!code){ toast('請輸入兌換碼'); return; }
+  if(code==='master'){
+    coins+=10;
+    saveState(); updateStats();
+    toast('🎁 兌換成功！+10 代幣 🪙');
+  }else{
+    toast('❌ 兌換碼無效');
+  }
   input.value='';
 }
 
