@@ -287,14 +287,84 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .f-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:#bbb;padding:11px 16px;border-radius:22px;font-size:12.5px;font-weight:700;cursor:pointer;transition:all .2s;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
 .f-btn.active{background:linear-gradient(135deg,#e3350d,#c41e3a);border-color:#e3350d;color:#fff}
 .f-btn.small{padding:8px 13px;min-height:38px;font-size:11.5px;border-radius:18px}
-.search-row{margin-bottom:10px}
-.dex-search{width:100%;min-height:44px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);border-radius:22px;color:#fff;font-size:14px;padding:0 16px;outline:none;font-family:inherit}
+/* 簡易篩選列（sticky） */
+.filter-bar{position:sticky;top:56px;z-index:90;display:flex;align-items:center;gap:8px;padding:10px 2px 10px 0;background:rgba(13,13,30,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:10px}
+.search-wrap{position:relative;flex:1;min-width:0}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.5;pointer-events:none}
+.dex-search{width:100%;min-height:44px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.15);border-radius:22px;color:#fff;font-size:14px;padding:0 36px 0 34px;outline:none;font-family:inherit}
 .dex-search::placeholder{color:rgba(255,255,255,.4)}
 .dex-search:focus{border-color:#ffd700}
-.sub-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;min-height:38px}
-.collect-row{display:flex;gap:8px;margin-bottom:12px;min-height:38px}
-.sort-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;min-height:38px}
-.sort-row .slab{font-size:11px;color:rgba(255,255,255,.5);font-weight:700;align-self:center}
+.search-clear{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);font-size:11px;cursor:pointer;font-family:inherit}
+.quick-group{display:flex;gap:6px;flex-shrink:0}
+.quick-pill{padding:6px 13px;border-radius:16px;border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .18s;min-height:40px;font-family:inherit}
+.quick-pill.active{background:linear-gradient(135deg,#e3350d,#c41e3a);border-color:transparent;color:#fff;box-shadow:0 2px 8px rgba(227,53,13,.35)}
+.adv-btn{position:relative;width:44px;height:44px;border-radius:12px;border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.7);font-size:20px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .18s;font-family:inherit}
+.adv-btn:active{background:rgba(255,215,0,.25)}
+.adv-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#e3350d;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+/* 篩選結果摘要 */
+.filter-summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:2px 0 10px;font-size:12.5px;color:rgba(255,255,255,.5)}
+.filter-summary b{color:#ffd700}
+.filter-tags{display:flex;gap:6px;flex-wrap:wrap}
+.filter-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:12px;background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.3);color:#ffd700;font-size:11px;font-weight:700;cursor:pointer}
+.clear-all{border:none;background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:12px;cursor:pointer;font-family:inherit}
+/* 空狀態 */
+.dex-empty{text-align:center;padding:60px 20px;color:rgba(255,255,255,.4)}
+.dex-empty .de-ico{font-size:40px;margin-bottom:12px}
+.dex-empty p{font-size:15px;margin-bottom:16px;font-weight:700}
+/* 新獲得高亮 */
+.dex-slot.new-glow{border:1.5px solid #4ade80 !important;box-shadow:0 0 14px rgba(74,222,128,.5)}
+/* 詳細篩選浮欄（手機：底部滑出） */
+.filter-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:399;opacity:0;pointer-events:none;transition:opacity .3s}
+.filter-overlay.open{opacity:1;pointer-events:auto}
+.filter-panel{position:fixed;left:0;right:0;bottom:0;height:84vh;z-index:400;background:linear-gradient(180deg,#1e1e3f,#10102a);border-top:1px solid rgba(255,255,255,.1);border-radius:20px 20px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.5);transform:translateY(105%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.filter-panel.open{transform:translateY(0)}
+.fp-handle{width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.3);margin:10px auto 4px;flex-shrink:0}
+.fp-header{display:flex;align-items:center;justify-content:space-between;padding:6px 20px 12px;border-bottom:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.fp-header h3{font-size:17px;font-weight:800;color:#fff}
+.fp-close{width:40px;height:40px;border-radius:10px;border:none;background:transparent;color:rgba(255,255,255,.6);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+.fp-close:active{background:rgba(255,255,255,.1)}
+.fp-body{flex:1;overflow-y:auto;padding:16px 20px 24px;-webkit-overflow-scrolling:touch}
+.fp-section{margin-bottom:24px}
+.fp-section h4{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:rgba(255,255,255,.55);margin-bottom:12px;letter-spacing:1px}
+.fp-bar{width:4px;height:16px;background:linear-gradient(180deg,#ffd700,#ff8c00);border-radius:2px}
+.fp-chips{display:flex;flex-wrap:wrap;gap:8px}
+.fp-chip{padding:7px 13px;border-radius:14px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.65);font-size:12.5px;font-weight:700;cursor:pointer;transition:all .15s;min-height:38px;font-family:inherit}
+.fp-chip:active{transform:scale(.95)}
+.fp-chip.on{background:rgba(255,215,0,.15);border-color:rgba(255,215,0,.45);color:#ffd700}
+.fp-chip .rdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.rdot-rainbow{background:linear-gradient(45deg,#ff004c,#ff9a00,#ffee00,#00d26a,#0090ff,#b200ff)}
+/* 屬性網格 */
+.fp-types{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.fp-type{aspect-ratio:1;border-radius:12px;border:2px solid transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:22px;position:relative;transition:all .15s;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.fp-type:active{transform:scale(.94)}
+.fp-type.on{border-color:#fff;box-shadow:0 0 0 2px var(--tc),0 0 12px var(--tc)}
+.fp-type.on::after{content:'✓';position:absolute;bottom:2px;right:2px;width:16px;height:16px;background:#fff;border-radius:50%;font-size:10px;color:#1a1a2e;display:flex;align-items:center;justify-content:center;font-weight:900;text-shadow:none}
+/* 排序 */
+.fp-sort{display:flex;flex-direction:column}
+.fp-radio{display:flex;align-items:center;gap:10px;padding:10px 0;cursor:pointer;color:rgba(255,255,255,.6);font-size:13.5px;transition:color .15s;min-height:40px}
+.fp-radio input{display:none}
+.radio-mark{width:19px;height:19px;border-radius:50%;border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.fp-radio input:checked + .radio-mark{border-color:#ffd700;background:#ffd700}
+.fp-radio input:checked + .radio-mark::after{content:'';width:9px;height:9px;border-radius:50%;background:#1a1a2e}
+.fp-radio input:checked ~ span:last-child{color:#fff;font-weight:700}
+/* 開關 */
+.fp-toggle{display:flex;align-items:center;gap:12px;padding:10px 0;cursor:pointer;color:rgba(255,255,255,.65);font-size:13.5px;min-height:44px}
+.fp-toggle input{display:none}
+.tk{width:44px;height:24px;border-radius:12px;background:rgba(255,255,255,.15);position:relative;flex-shrink:0;transition:background .2s}
+.tk-thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.fp-toggle input:checked + .tk{background:#4ade80}
+.fp-toggle input:checked + .tk .tk-thumb{transform:translateX(20px)}
+/* 底部操作 */
+.fp-footer{display:flex;gap:10px;padding:12px 20px calc(12px + env(safe-area-inset-bottom));background:rgba(16,16,42,.97);backdrop-filter:blur(12px);border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.fp-btn{flex:1;padding:13px 16px;border-radius:22px;font-size:14.5px;font-weight:800;cursor:pointer;border:none;transition:all .18s;min-height:48px;font-family:inherit}
+.fp-btn.ghost{background:transparent;color:rgba(255,255,255,.65);border:1.5px solid rgba(255,255,255,.14)}
+.fp-btn.primary{background:linear-gradient(135deg,#e3350d,#c41e3a);color:#fff;box-shadow:0 3px 12px rgba(227,53,13,.35)}
+.fp-btn.primary:active{transform:scale(.97)}
+@media (min-width:600px){
+  .filter-panel{left:auto;right:0;width:320px;height:100vh;border-radius:0;border-left:1px solid rgba(255,255,255,.1);border-top:none;transform:translateX(105%)}
+  .filter-panel.open{transform:translateX(0)}
+  .fp-handle{display:none}
+}
 .dex-grid{position:relative;display:block;width:100%;margin-top:6px}
 .dex-slot{position:absolute;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.18);font-size:13px;cursor:default}
 .dex-slot.owned{border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);cursor:pointer;transition:transform .2s}
@@ -491,15 +561,60 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
       <div class="progress-bar"><div class="progress-fill" id="dexFill"></div></div>
     </div>
     <div class="gen-progress" id="genProgress"></div>
-    <div class="collect-row" id="collectRow"></div>
-    <div class="filter-row" id="filterRow"></div>
-    <div class="search-row">
-      <input type="search" id="dexSearch" class="dex-search" placeholder="🔍 搜尋寶可夢名稱…" autocomplete="off">
+    <div class="filter-bar" id="filterBar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="search" id="dexSearch" class="dex-search" placeholder="搜尋寶可夢…" autocomplete="off">
+        <button class="search-clear" id="searchClear" style="display:none">✕</button>
+      </div>
+      <div class="quick-group" id="quickGroup"></div>
+      <button class="adv-btn" id="advToggle" aria-label="詳細篩選">⚙️<span class="adv-badge" id="advBadge" style="display:none"></span></button>
     </div>
-    <div class="sub-filter-row" id="subFilterRow"></div>
-    <div class="sort-row" id="sortRow"></div>
+    <div class="filter-summary" id="filterSummary">
+      <span>顯示 <b id="filteredCount">0</b> / 1025 隻</span>
+      <span class="filter-tags" id="filterTags"></span>
+      <button class="clear-all" id="clearAllFilters" style="display:none">清除全部</button>
+    </div>
+    <div class="dex-empty" id="dexEmpty" style="display:none">
+      <div class="de-ico">🔍</div>
+      <p>沒有符合條件的寶可夢</p>
+      <button class="f-btn small" id="dexEmptyClear">清除所有篩選</button>
+    </div>
     <div class="dex-grid" id="dexGrid"></div>
     <div class="dex-note">收集全部 1025 隻寶可夢（關都至帕底亞，9 代全收錄）！閃光版唔另計進度</div>
+  </div>
+
+  <!-- 詳細篩選浮欄 -->
+  <div class="filter-overlay" id="filterOverlay"></div>
+  <div class="filter-panel" id="filterPanel">
+    <div class="fp-handle"></div>
+    <div class="fp-header"><h3>詳細篩選</h3><button class="fp-close" id="fpClose" aria-label="關閉">✕</button></div>
+    <div class="fp-body">
+      <div class="fp-section">
+        <h4><span class="fp-bar"></span>世代</h4>
+        <div class="fp-chips" id="fpGen"></div>
+      </div>
+      <div class="fp-section">
+        <h4><span class="fp-bar"></span>屬性</h4>
+        <div class="fp-types" id="fpTypes"></div>
+      </div>
+      <div class="fp-section">
+        <h4><span class="fp-bar"></span>稀有度</h4>
+        <div class="fp-chips" id="fpRarity"></div>
+      </div>
+      <div class="fp-section">
+        <h4><span class="fp-bar"></span>排序方式</h4>
+        <div class="fp-sort" id="fpSort"></div>
+      </div>
+      <div class="fp-section">
+        <h4><span class="fp-bar"></span>顯示設定</h4>
+        <label class="fp-toggle"><input type="checkbox" id="fpHighlightNew"><span class="tk"><span class="tk-thumb"></span></span><span>高亮新獲得（24 小時內）</span></label>
+      </div>
+    </div>
+    <div class="fp-footer">
+      <button class="fp-btn ghost" id="fpReset">🗑️ 清除全部</button>
+      <button class="fp-btn primary" id="fpApply">✓ 套用篩選</button>
+    </div>
   </div>
 </div>
 
@@ -1113,12 +1228,13 @@ function showView(v){
 }
 
 // ===== DEX =====
-let dexFilter='all';
-let collectFilter='all';   // all | owned | unowned
-let sortBy='id';           // id | rarity | name | time
-let genFilter=0;      // 0=全部 1/2/3
-let typeFilter='';    // ''=全部
 let searchQ='';
+let collectFilter='all';   // all | owned | unowned
+let genSel=[];             // 空=全部; [1,3,7]=只顯示第1/3/7代
+let typeSel=[];            // 空=全部; ['Fire','Water']=只顯示火水
+let raritySel=['t0','t1','t2','t3','shiny'];  // 5個全選=全部
+let sortBy='id';           // id | rarity | name | time
+let highlightNew=false;
 // 大圖彈窗瀏覽狀態：已收集卡索引
 let modalOwnedList = [];
 let modalIdx = 0;
@@ -1126,81 +1242,215 @@ let modalTouchX = null;
 const GEN_KEYS = [[0,'全部'],[1,'關都'],[2,'城都'],[3,'豐緣'],[4,'神奧'],[5,'合眾'],[6,'卡洛斯'],[7,'阿羅拉'],[8,'伽勒爾'],[9,'帕底亞']];
 const TYPE_KEYS = [['','全部'],['Grass','草'],['Fire','火'],['Water','水'],['Lightning','雷'],['Psychic','超'],
   ['Fighting','鬥'],['Darkness','惡'],['Metal','鋼'],['Fairy','妖'],['Dragon','龍'],['Colorless','無']];
-function initFilters(){
-  const row=document.getElementById('filterRow');
-  FILTERS.forEach(([k,l])=>{
-    const b=document.createElement('button');
-    b.className='f-btn'+(k==='all'?' active':'');
-    b.textContent=l;
-    b.onclick=()=>{ dexFilter=k; document.querySelectorAll('.f-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderDex(); };
-    row.appendChild(b);
-  });
-  // 世代子選單
-  const sub=document.getElementById('subFilterRow');
-  GEN_KEYS.forEach(([k,l])=>{
-    const b=document.createElement('button');
-    b.className='f-btn small'+(k===0?' active':'');
-    b.textContent='🌍 '+l;
-    b.onclick=()=>{ genFilter=k; sub.querySelectorAll('.f-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderDex(); };
-    sub.appendChild(b);
-  });
-  TYPE_KEYS.forEach(([k,l])=>{
-    const b=document.createElement('button');
-    b.className='f-btn small'+(k===''?' active':'');
-    b.textContent='✦ '+l;
-    b.onclick=()=>{ typeFilter=k; sub.querySelectorAll('.f-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderDex(); };
-    sub.appendChild(b);
-  });
-  // 搜尋
+const TYPE_DATA = [
+  {key:'Grass',emoji:'🌿',color:'#78C850'}, {key:'Fire',emoji:'🔥',color:'#F08030'},
+  {key:'Water',emoji:'💧',color:'#6890F0'}, {key:'Lightning',emoji:'⚡',color:'#F8D030'},
+  {key:'Psychic',emoji:'🔮',color:'#F85888'}, {key:'Fighting',emoji:'👊',color:'#C03028'},
+  {key:'Darkness',emoji:'😈',color:'#705848'}, {key:'Metal',emoji:'⚙️',color:'#B8B8D0'},
+  {key:'Fairy',emoji:'🧚',color:'#EE99AC'}, {key:'Dragon',emoji:'🐉',color:'#7038F8'},
+  {key:'Colorless',emoji:'⭐',color:'#A8A878'}
+];
+const RARITY_DATA = [
+  {key:'t0',label:'普通',dot:'#9e9e9e'}, {key:'t1',label:'罕見',dot:'#CD7F32'},
+  {key:'t2',label:'稀有',dot:'#ffd700'}, {key:'t3',label:'超稀有',dot:'#a855f7'},
+  {key:'shiny',label:'閃光',dot:'rainbow'}
+];
+const SORT_DATA = [['id','編號（預設）'],['rarity','稀有度（高→低）'],['name','名稱 A-Z'],['time','獲得時間（新→舊）']];
+const SESSION_KEY='ptcg_filter_v1';
+// 浮欄暫存（未套用前）
+let pendingGen=[], pendingType=[], pendingRarity=[], pendingSort='id', pendingHighlight=false;
+let panelOpen=false;
+
+function saveFilterState(){
+  try{
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({searchQ, collectFilter, genSel, typeSel, raritySel, sortBy, highlightNew}));
+  }catch(e){}
+}
+function loadFilterState(){
+  try{
+    const s = JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null');
+    if(s){
+      searchQ = s.searchQ || '';
+      collectFilter = s.collectFilter || 'all';
+      genSel = Array.isArray(s.genSel)?s.genSel:[];
+      typeSel = Array.isArray(s.typeSel)?s.typeSel:[];
+      raritySel = Array.isArray(s.raritySel)&&s.raritySel.length?s.raritySel:['t0','t1','t2','t3','shiny'];
+      sortBy = s.sortBy || 'id';
+      highlightNew = !!s.highlightNew;
+    }
+  }catch(e){}
+}
+
+function initDexControls(){
+  // 搜尋框
   const box=document.getElementById('dexSearch');
+  const clear=document.getElementById('searchClear');
   let timer=null;
   box.addEventListener('input', ()=>{
     clearTimeout(timer);
-    timer=setTimeout(()=>{ searchQ=box.value.trim(); renderDex(); }, 200);
+    clear.style.display = box.value ? 'block' : 'none';
+    timer=setTimeout(()=>{ searchQ=box.value.trim(); renderDex(); saveFilterState(); }, 250);
   });
-}
-function initCollectRow(){
-  const row=document.getElementById('collectRow');
-  if(!row) return;
+  clear.addEventListener('click', ()=>{
+    box.value=''; clear.style.display='none'; searchQ=''; renderDex(); saveFilterState(); box.focus();
+  });
+  // 簡易收集狀態
+  const qg=document.getElementById('quickGroup');
+  qg.innerHTML='';
   [['all','全部'],['owned','已收集'],['unowned','未收集']].forEach(([k,l])=>{
     const b=document.createElement('button');
-    b.className='f-btn small'+(k===collectFilter?' active':'');
+    b.className='quick-pill'+(k===collectFilter?' active':'');
     b.textContent=l;
-    b.onclick=()=>{
-      collectFilter=k;
-      row.querySelectorAll('.f-btn').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
-      renderDex();
-    };
-    row.appendChild(b);
+    b.onclick=()=>{ collectFilter=k; qg.querySelectorAll('.quick-pill').forEach(x=>x.classList.remove('active')); b.classList.add('active'); renderDex(); saveFilterState(); };
+    qg.appendChild(b);
   });
+  // 詳細篩選浮欄
+  buildPanel();
+  document.getElementById('advToggle').onclick=openPanel;
+  document.getElementById('fpClose').onclick=closePanel;
+  document.getElementById('filterOverlay').onclick=closePanel;
+  document.getElementById('fpReset').onclick=resetPanel;
+  document.getElementById('fpApply').onclick=applyPanel;
+  document.getElementById('dexEmptyClear').onclick=()=>{ clearAllFilters(); };
+  document.getElementById('clearAllFilters').onclick=clearAllFilters;
+  document.addEventListener('keydown',(e)=>{ if(e.key==='Escape' && panelOpen) closePanel(); });
 }
-function initSortRow(){
-  const row=document.getElementById('sortRow');
-  if(!row) return;
-  const label=document.createElement('span');
-  label.className='slab'; label.textContent='排序';
-  row.appendChild(label);
-  [['id','編號'],['rarity','稀有度'],['name','名稱'],['time','新→舊']].forEach(([k,l])=>{
+
+function buildPanel(){
+  // 世代
+  const gen=document.getElementById('fpGen');
+  gen.innerHTML='';
+  const mkAll=document.createElement('button');
+  mkAll.className='fp-chip'; mkAll.dataset.k='all'; mkAll.textContent='全部';
+  mkAll.onclick=()=>{ pendingGen=[]; renderPanel(); };
+  gen.appendChild(mkAll);
+  for(let g=1;g<=9;g++){
     const b=document.createElement('button');
-    b.className='f-btn small'+(k===sortBy?' active':'');
-    b.textContent=l;
+    b.className='fp-chip'; b.dataset.k=String(g); b.textContent='G'+g+' '+GEN_LABEL[g];
     b.onclick=()=>{
-      sortBy=k;
-      row.querySelectorAll('.f-btn').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
-      renderDex();
+      const i=pendingGen.indexOf(g);
+      if(i>-1) pendingGen.splice(i,1); else pendingGen.push(g);
+      renderPanel();
     };
-    row.appendChild(b);
+    gen.appendChild(b);
+  }
+  // 屬性
+  const ty=document.getElementById('fpTypes');
+  ty.innerHTML='';
+  TYPE_DATA.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='fp-type'; b.dataset.k=t.key; b.textContent=t.emoji; b.title=t.key;
+    b.style.background=t.color; b.style.setProperty('--tc',t.color);
+    b.onclick=()=>{
+      const i=pendingType.indexOf(t.key);
+      if(i>-1) pendingType.splice(i,1); else pendingType.push(t.key);
+      renderPanel();
+    };
+    ty.appendChild(b);
   });
+  // 稀有度
+  const ra=document.getElementById('fpRarity');
+  ra.innerHTML='';
+  RARITY_DATA.forEach(r=>{
+    const b=document.createElement('button');
+    b.className='fp-chip'; b.dataset.k=r.key;
+    b.innerHTML=`<span class="rdot ${r.dot==='rainbow'?'rdot-rainbow':''}" style="${r.dot==='rainbow'?'':'background:'+r.dot}"></span>${r.label}`;
+    b.onclick=()=>{
+      const i=pendingRarity.indexOf(r.key);
+      if(i>-1){ if(pendingRarity.length>1) pendingRarity.splice(i,1); }
+      else pendingRarity.push(r.key);
+      renderPanel();
+    };
+    ra.appendChild(b);
+  });
+  // 排序
+  const so=document.getElementById('fpSort');
+  so.innerHTML='';
+  SORT_DATA.forEach(([k,l])=>{
+    const label=document.createElement('label');
+    label.className='fp-radio';
+    label.innerHTML=`<input type="radio" name="fpSort" value="${k}"><span class="radio-mark"></span><span>${l}</span>`;
+    label.querySelector('input').onchange=()=>{ if(label.querySelector('input').checked) pendingSort=k; };
+    so.appendChild(label);
+  });
+  // 顯示設定
+  document.getElementById('fpHighlightNew').onchange=(e)=>{ pendingHighlight=e.target.checked; };
+}
+
+function renderPanel(){
+  // 世代
+  document.querySelectorAll('#fpGen .fp-chip').forEach(b=>{
+    const k=b.dataset.k;
+    b.classList.toggle('on', k==='all' ? pendingGen.length===0 : pendingGen.includes(+k));
+  });
+  // 屬性
+  document.querySelectorAll('#fpTypes .fp-type').forEach(b=>{
+    b.classList.toggle('on', pendingType.includes(b.dataset.k));
+  });
+  // 稀有度
+  document.querySelectorAll('#fpRarity .fp-chip').forEach(b=>{
+    b.classList.toggle('on', pendingRarity.includes(b.dataset.k));
+  });
+  // 排序
+  document.querySelectorAll('#fpSort input').forEach(r=>{ r.checked = r.value===pendingSort; });
+  // 顯示設定
+  document.getElementById('fpHighlightNew').checked = pendingHighlight;
+}
+
+function openPanel(){
+  pendingGen=[...genSel]; pendingType=[...typeSel]; pendingRarity=[...raritySel];
+  pendingSort=sortBy; pendingHighlight=highlightNew;
+  renderPanel();
+  document.getElementById('filterPanel').classList.add('open');
+  document.getElementById('filterOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+  panelOpen=true;
+}
+function closePanel(){
+  document.getElementById('filterPanel').classList.remove('open');
+  document.getElementById('filterOverlay').classList.remove('open');
+  document.body.style.overflow='';
+  panelOpen=false;
+}
+function applyPanel(){
+  genSel=[...pendingGen]; typeSel=[...pendingType]; raritySel=[...pendingRarity];
+  sortBy=pendingSort; highlightNew=pendingHighlight;
+  closePanel();
+  renderDex(); saveFilterState(); updateBadge();
+}
+function resetPanel(){
+  pendingGen=[]; pendingType=[]; pendingRarity=['t0','t1','t2','t3','shiny'];
+  pendingSort='id'; pendingHighlight=false;
+  renderPanel();
+}
+function clearAllFilters(){
+  searchQ=''; collectFilter='all'; genSel=[]; typeSel=[]; raritySel=['t0','t1','t2','t3','shiny'];
+  sortBy='id'; highlightNew=false;
+  const box=document.getElementById('dexSearch'); box.value='';
+  document.getElementById('searchClear').style.display='none';
+  document.querySelectorAll('#quickGroup .quick-pill').forEach(b=>b.classList.toggle('active', b.textContent==='全部'));
+  renderDex(); saveFilterState(); updateBadge();
+}
+function updateBadge(){
+  const n = genSel.length + typeSel.length + (raritySel.length<5?1:0) + (sortBy!=='id'?1:0) + (highlightNew?1:0);
+  const b=document.getElementById('advBadge');
+  b.style.display = n>0 ? 'flex' : 'none';
+  b.textContent = n;
 }
 function matchesFilter(c){
-  if(dexFilter==='shiny' && !(collection[c.id] && collection[c.id].shiny)) return false;
-  if(dexFilter!=='all' && dexFilter!=='shiny' && c.tier !== parseInt(dexFilter[1])) return false;
+  // 收集狀態
   if(collectFilter==='owned' && !collection[c.id]) return false;
   if(collectFilter==='unowned' && collection[c.id]) return false;
-  if(genFilter && genOf(c.id) !== genFilter) return false;
-  if(typeFilter && !(c.types||[]).includes(typeFilter)) return false;
+  // 世代（空=全部）
+  if(genSel.length && !genSel.includes(genOf(c.id))) return false;
+  // 屬性（空=全部；雙屬性任中其一）
+  if(typeSel.length && !(c.types||[]).some(t=>typeSel.includes(t))) return false;
+  // 稀有度：tier 冇揀 → 只有揀咗閃光且係 owned shiny 先過
+  if(!raritySel.includes('t'+c.tier)){
+    const sh = collection[c.id] && collection[c.id].shiny;
+    if(!(raritySel.includes('shiny') && sh)) return false;
+  }
+  // 搜尋
   if(searchQ && !c.zh.includes(searchQ)) return false;
   return true;
 }
@@ -1231,6 +1481,11 @@ function renderDex(){
   else if(sortBy==='time'){ dexFiltered.sort((a,b)=>((collection[b.id]&&collection[b.id].t)||0)-((collection[a.id]&&collection[a.id].t)||0)); }
   document.getElementById('dexCount').textContent = `${owned} / 1025`;
   document.getElementById('dexFill').style.width = (owned/1025*100)+'%';
+  // 篩選摘要 + 空狀態
+  document.getElementById('filteredCount').textContent = dexFiltered.length;
+  renderFilterTags();
+  updateBadge();
+  document.getElementById('dexEmpty').style.display = dexFiltered.length===0 ? 'block':'none';
   renderGenProgress();
   const {rowH} = dexLayout();
   const rows = Math.ceil(dexFiltered.length/DEX_COLS);
@@ -1239,6 +1494,27 @@ function renderDex(){
   dexWin = {start:-1, end:-1};
   grid.innerHTML='';
   updateDexWindow();
+}
+function renderFilterTags(){
+  const wrap=document.getElementById('filterTags');
+  const clearBtn=document.getElementById('clearAllFilters');
+  const tags=[];
+  if(searchQ) tags.push({label:'搜尋:'+searchQ, clear:()=>{ searchQ=''; document.getElementById('dexSearch').value=''; document.getElementById('searchClear').style.display='none'; }});
+  if(collectFilter!=='all') tags.push({label: collectFilter==='owned'?'已收集':'未收集', clear:()=>{ collectFilter='all'; document.querySelectorAll('#quickGroup .quick-pill').forEach(b=>b.classList.toggle('active', b.textContent==='全部')); }});
+  genSel.forEach(g=>tags.push({label:'G'+g+' '+GEN_LABEL[g], clear:()=>{ genSel=genSel.filter(x=>x!==g); }}));
+  typeSel.forEach(t=>{ const td=TYPE_DATA.find(x=>x.key===t); tags.push({label:(td?td.emoji:'')+(CN_TYPE[t]||t), clear:()=>{ typeSel=typeSel.filter(x=>x!==t); }}); });
+  if(raritySel.length<5) tags.push({label:'稀有度×'+raritySel.length, clear:()=>{ raritySel=['t0','t1','t2','t3','shiny']; }});
+  if(sortBy!=='id') tags.push({label:'排序', clear:()=>{ sortBy='id'; }});
+  if(highlightNew) tags.push({label:'新獲得', clear:()=>{ highlightNew=false; }});
+  wrap.innerHTML='';
+  tags.forEach(t=>{
+    const el=document.createElement('span');
+    el.className='filter-tag';
+    el.textContent=t.label+' ✕';
+    el.onclick=()=>{ t.clear(); renderDex(); saveFilterState(); };
+    wrap.appendChild(el);
+  });
+  clearBtn.style.display = tags.length ? 'block':'none';
 }
 function updateDexWindow(){
   if(!document.getElementById('viewDex').classList.contains('show')) return;
@@ -1262,6 +1538,8 @@ function updateDexWindow(){
       const isShiny = have && have.shiny;
       const slot = document.createElement('div');
       slot.className = 'dex-slot'+(have?' owned':'')+(isShiny?' shiny':'');
+      // 24 小時內新獲得高亮
+      if(highlightNew && have && have.t && (Date.now()-have.t)<86400000) slot.classList.add('new-glow');
       slot.style.cssText = `left:${col*(slotW+DEX_GAP)}px;top:${row*rowH}px;width:${slotW}px;height:${slotH}px`;
       if(have){
         const tags = [];
@@ -1359,7 +1637,7 @@ function renderGenProgress(){
   let html='<div class="gp-head"><span>各世代收集</span><span id="gpTotal"></span></div><div class="gp-row">';
   for(let g=1;g<=9;g++){
     const pct=Math.round(counts[g].owned/counts[g].total*100);
-    html+=`<div class="gp-seg${pct===100?' done':''}${genFilter===g?' on':''}" data-g="${g}">
+    html+=`<div class="gp-seg${pct===100?' done':''}${(genSel.length===0||genSel.includes(g))?' on':''}" data-g="${g}">
       <span class="g">G${g}</span>
       <div class="gbar"><i style="width:${pct}%"></i></div>
       <span class="gn">${counts[g].owned}/${counts[g].total}</span></div>`;
@@ -1368,10 +1646,10 @@ function renderGenProgress(){
   el.innerHTML=html;
   el.querySelectorAll('.gp-seg').forEach(seg=>{
     seg.onclick=()=>{
-      genFilter = genFilter===+seg.dataset.g ? 0 : +seg.dataset.g;
-      renderGenProgress(); renderDex();
-      const sub=document.getElementById('subFilterRow');
-      if(sub){ sub.querySelectorAll('.f-btn').forEach(b=>b.classList.remove('active')); }
+      const g=+seg.dataset.g;
+      const i=genSel.indexOf(g);
+      if(i>-1) genSel.splice(i,1); else genSel.push(g);
+      renderGenProgress(); renderDex(); saveFilterState();
     };
   });
   const gt=el.querySelector('#gpTotal');
@@ -1976,9 +2254,8 @@ function closeTutorial(){
 // ===== INIT =====
 loadState();
 loadShareData();
-initFilters();
-initCollectRow();
-initSortRow();
+loadFilterState();
+initDexControls();
 initSwipe();
 initModalSwipe();
 initPackSelect();
