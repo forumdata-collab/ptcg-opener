@@ -31,8 +31,9 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .pack-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 140px);padding:24px 20px;position:relative}
 .stats-row{display:flex;gap:14px;margin-bottom:14px;font-size:13px;color:rgba(255,255,255,.75);align-items:center;justify-content:center}
 .stats-row b{color:#ffd700;font-size:15px}
-.coin-badge{background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.4);color:#ffd700;padding:5px 13px;border-radius:16px;font-weight:800;font-size:14px}
-.coin-badge b{font-size:16px}
+.coin-badge{background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.4);color:#ffd700;padding:6px 16px;border-radius:18px;font-weight:800;font-size:17px;display:inline-flex;align-items:center;gap:6px}
+.coin-badge b{font-size:20px}
+.coin-badge .coin-icon{font-size:26px;line-height:1}
 .train-btn{background:linear-gradient(135deg,#4ade80,#16a34a);color:#fff;border:none;padding:13px 30px;border-radius:26px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 6px 18px rgba(22,163,74,.4);transition:all .25s;letter-spacing:1px;min-height:48px;margin-bottom:22px}
 .train-btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(22,163,74,.55)}
 .train-btn:active{transform:translateY(0)}
@@ -208,6 +209,9 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .train-feedback.no{color:#ff6b6b}
 .train-feedback .correct{color:#ffd700}
 .train-exit{margin-top:6px;background:rgba(255,255,255,.1);color:#bbb;box-shadow:none}
+.train-again{width:100%;background:linear-gradient(135deg,#ffd700,#ff8c00);color:#222;border:none;border-radius:16px;font-size:17px;font-weight:900;letter-spacing:1px;cursor:pointer;padding:16px 0;min-height:54px;margin-bottom:10px;box-shadow:0 8px 26px rgba(255,215,0,.45)}
+.train-again-glow{animation:trainGlow 1.4s ease-in-out infinite}
+@keyframes trainGlow{0%,100%{box-shadow:0 8px 26px rgba(255,215,0,.45);transform:scale(1)}50%{box-shadow:0 10px 40px rgba(255,215,0,.85);transform:scale(1.04)}}
 /* warn modal */
 .warn-modal{position:fixed;inset:0;background:rgba(0,0,0,.9);backdrop-filter:blur(8px);z-index:330;display:none;align-items:center;justify-content:center;padding:20px}
 .warn-modal.show{display:flex}
@@ -242,14 +246,13 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
     <div class="nav">
       <button class="nav-btn active" id="navPack" onclick="showView('pack')">抽卡</button>
       <button class="nav-btn" id="navDex" onclick="showView('dex')">圖鑑</button>
-      <a class="nav-link" href="index.html">🎴 原版</a>
     </div>
   </div>
 
   <!-- PACK PAGE -->
   <div class="pack-page" id="viewPack">
     <div class="stats-row">
-      <span class="coin-badge">🪙 <b id="statCoins">0</b></span>
+      <span class="coin-badge"><span class="coin-icon">🪙</span> <b id="statCoins">0</b></span>
       <span>已開 <b id="statPacks">0</b> 包</span>
       <span>收集 <b id="statColl">0</b>/1025</span>
     </div>
@@ -359,6 +362,7 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
       </div>
     </div>
     <div class="train-feedback" id="trainFeedback"></div>
+    <button class="train-again" id="trainAgain" onclick="trainAgain()" style="display:none">🔁 繼續訓練</button>
     <button class="btn-primary train-exit" onclick="closeTrain()">離開訓練</button>
   </div>
 </div>
@@ -905,7 +909,19 @@ function openTrain(){
   for(let i=0;i<5;i++) trainQuestions.push(genTrainQuestion());
   trainIdx = 0;
   trainCorrect = 0;
+  const again = document.getElementById('trainAgain');
+  if(again){ again.style.display = 'none'; again.classList.remove('train-again-glow'); }
   document.getElementById('trainModal').classList.add('show');
+  renderTrain();
+}
+function trainAgain(){
+  // 繼續訓練：重新出 5 題（唔使關 modal）
+  trainQuestions = [];
+  for(let i=0;i<5;i++) trainQuestions.push(genTrainQuestion());
+  trainIdx = 0;
+  trainCorrect = 0;
+  const again = document.getElementById('trainAgain');
+  if(again){ again.style.display = 'none'; again.classList.remove('train-again-glow'); }
   renderTrain();
 }
 function closeTrain(){
@@ -926,8 +942,15 @@ function renderTrain(){
     document.getElementById('trainFeedback').innerHTML = '<span style="color:#4ade80">+1 代幣 🪙</span>';
     document.getElementById('trainAnswer').style.visibility = 'hidden';
     document.querySelector('.train-numpad').style.display = 'none';
+    // 高亮「繼續訓練」按鈕（重新出 5 題）
+    const btn = document.getElementById('trainAgain');
+    btn.style.display = '';
+    btn.classList.add('train-again-glow');
     return;
   }
+  // 正常題目畫面：隱藏「繼續訓練」
+  const again = document.getElementById('trainAgain');
+  if(again){ again.style.display = 'none'; again.classList.remove('train-again-glow'); }
   const q = trainQuestions[trainIdx];
   document.getElementById('trainQ').innerHTML = `${q.a} <span class="q-sym">${q.op}</span> ${q.b} = <span class="q-sym">?</span>`;
   document.getElementById('trainFeedback').innerHTML = '';
