@@ -786,13 +786,18 @@ function renderResult(){
   // 逐張翻開：由頂（4）→ 底（0）
   const order = [4,3,2,1,0];
   const dur = 620;  // 每張間隔
+  // 下方臨時位置（不重疊）
+  const tmpY = 260;  // 向下偏移
+  const tmpX = [ -74, -24, 26, -50, 0 ];  // 每張唔同 X 偏移
   order.forEach((idx, step)=>{
     setTimeout(()=>{
       const d = cards[idx];
       const c = currentCards[idx];
-      // 翻開：rotateY 180
+      // 翻開 + 飛去下方位置
       d.classList.remove('in-stack');
       d.classList.add('revealed');
+      d.style.transition='transform .55s cubic-bezier(.2,.9,.3,1.1),opacity .3s';
+      d.style.transform=`translateX(${tmpX[idx]}px) translateY(${tmpY}px)`;
       // 啪聲 + 稀有度音效
       if(c.fx==='crown'){ SFX.ultra(); burstFx(d, 18); }
       else if(c.fx==='gold'){ SFX.ultra(); burstFx(d, 12); }
@@ -812,13 +817,13 @@ function renderResult(){
     }, 200 + step*dur);
   });
 
-  // 全部翻開後，等 2 秒，然後一齊飛去 cards-row
+  // 全部翻開後，等 2 秒，然後一齊向上滑入 cards-row
   const totalT = 200 + 5*dur;
-  const flyT = totalT + 2000;   // 等 2 秒先飛
-  const landT = flyT + 650;     // 飛 650ms 落地
+  const flyUpT = totalT + 2000;   // 等 2 秒先上
+  const landT = flyUpT + 600;     // 滑 600ms 到位
   setTimeout(()=>{
-    // 一齊飛去 row（動畫）
     cards.forEach((d, i)=>{
+      // 向上滑入結果列
       d.style.transition='transform .55s cubic-bezier(.2,1.1,.3,1),opacity .3s';
       d.style.transform='';
     });
@@ -833,8 +838,8 @@ function renderResult(){
         row.style.display='flex';
         d.style.opacity='1';
       });
-    }, 650);
-  }, flyT);
+    }, 600);
+  }, flyUpT);
 
   // 全部翻開後（落地先 celebrate）
   setTimeout(()=>{
