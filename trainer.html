@@ -26,10 +26,12 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .nav{display:flex;gap:8px}
 .nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#ddd;padding:10px 18px;border-radius:22px;font-size:14px;font-weight:600;cursor:pointer;transition:all .25s;min-height:44px;display:inline-flex;align-items:center}
 .nav-btn.active{background:linear-gradient(135deg,#e3350d,#c41e3a);border-color:#e3350d;color:#fff;box-shadow:0 4px 14px rgba(227,53,13,.4)}
+.nav-btn.train-nav{background:linear-gradient(135deg,#4ade80,#16a34a);border-color:#16a34a;color:#fff;box-shadow:0 4px 14px rgba(22,163,74,.4)}
+.nav-btn.train-nav:active{transform:scale(.95)}
 .nav-link{background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.4);color:#ffd700;padding:10px 14px;border-radius:22px;font-size:12.5px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;min-height:44px;white-space:nowrap}
 /* pack page */
 .pack-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 140px);padding:24px 20px;position:relative}
-.stats-row{display:flex;gap:14px;margin-bottom:14px;font-size:13px;color:rgba(255,255,255,.75);align-items:center;justify-content:center}
+.stats-row{display:flex;gap:14px;margin-bottom:32px;font-size:13px;color:rgba(255,255,255,.75);align-items:center;justify-content:center}
 .stats-row b{color:#ffd700;font-size:15px}
 .coin-badge{background:rgba(255,215,0,.12);border:1px solid rgba(255,215,0,.4);color:#ffd700;padding:6px 16px;border-radius:18px;font-weight:800;font-size:17px;display:inline-flex;align-items:center;gap:6px}
 .coin-badge b{font-size:20px}
@@ -246,6 +248,7 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
     <div class="nav">
       <button class="nav-btn active" id="navPack" onclick="showView('pack')">抽卡</button>
       <button class="nav-btn" id="navDex" onclick="showView('dex')">圖鑑</button>
+      <button class="nav-btn train-nav" onclick="openTrain()">📚 訓練</button>
     </div>
   </div>
 
@@ -256,7 +259,6 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
       <span>已開 <b id="statPacks">0</b> 包</span>
       <span>收集 <b id="statColl">0</b>/1025</span>
     </div>
-    <button class="train-btn" onclick="openTrain()">📚 訓練欄（+1 代幣）</button>
     <div class="pack-wrap" id="packWrap">
       <div class="burst" id="burst"></div>
       <div class="pack" id="pack">
