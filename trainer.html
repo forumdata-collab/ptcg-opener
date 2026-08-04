@@ -355,7 +355,12 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .train-modal.show{display:flex}
 .train-box{background:linear-gradient(160deg,#1e3a5f,#16213e);border:2px solid rgba(255,215,0,.4);border-radius:20px;padding:24px 20px;max-width:360px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6)}
 .train-box h3{color:#ffd700;font-size:20px;margin-bottom:6px}
-.train-sub{color:rgba(255,255,255,.65);font-size:13px;margin-bottom:14px}
+.train-sub{color:rgba(255,255,255,.65);font-size:13px;margin-bottom:12px}
+.train-levels{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-bottom:14px}
+.lv-chip{flex:1;min-width:44px;max-width:52px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.14);color:#ddd;padding:8px 2px;border-radius:14px;font-size:12.5px;font-weight:800;cursor:pointer;transition:all .18s;min-height:40px;font-family:inherit}
+.lv-chip.on{background:linear-gradient(135deg,#4ade80,#16a34a);border-color:#16a34a;color:#fff;box-shadow:0 3px 12px rgba(22,163,74,.4)}
+.lv-chip .lv-coin{display:block;font-size:9px;color:rgba(255,255,255,.6);font-weight:700;margin-top:2px}
+.lv-chip.on .lv-coin{color:rgba(255,255,255,.9)}
 .train-progress{display:flex;gap:8px;justify-content:center;margin-bottom:18px}
 .train-progress .tp{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#888;transition:all .3s}
 .train-progress .tp.done{background:#ffd700;border-color:#ffd700;color:#222}
@@ -523,24 +528,29 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
 <div class="train-modal" id="trainModal">
   <div class="train-box">
     <h3>📚 訓練欄</h3>
-    <p class="train-sub">答啱 5 題小一數學，賺 1 個代幣 🪙</p>
+    <p class="train-sub" id="trainSub">答啱 5 題小一數學，賺 1 個代幣 🪙</p>
+    <div class="train-levels" id="trainLevels"></div>
     <div class="train-progress" id="trainProgress"></div>
     <div class="train-q" id="trainQ"></div>
     <div class="train-answer" id="trainAnswer">0</div>
     <div class="train-numpad">
       <div class="numpad-row">
-        <button class="numpad-btn" data-n="0">0</button>
         <button class="numpad-btn" data-n="1">1</button>
         <button class="numpad-btn" data-n="2">2</button>
         <button class="numpad-btn" data-n="3">3</button>
         <button class="numpad-btn" data-n="4">4</button>
+        <button class="numpad-btn" data-n="5">5</button>
       </div>
       <div class="numpad-row">
-        <button class="numpad-btn" data-n="5">5</button>
         <button class="numpad-btn" data-n="6">6</button>
         <button class="numpad-btn" data-n="7">7</button>
         <button class="numpad-btn" data-n="8">8</button>
         <button class="numpad-btn" data-n="9">9</button>
+        <button class="numpad-btn" data-n="0">0</button>
+      </div>
+      <div class="numpad-row" id="numpadExtra" style="display:none">
+        <button class="numpad-btn" data-n=".">.</button>
+        <button class="numpad-btn" data-n="/">/</button>
       </div>
       <div class="numpad-row">
         <button class="numpad-btn numpad-del" onclick="numpadDel()">⌫ 刪除</button>
@@ -557,7 +567,7 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
   <div class="warn-box">
     <div class="warn-icon">📖</div>
     <h3>勤有功 戲無益</h3>
-    <p class="warn-text">冇代幣抽唔到卡喇！<br>去「訓練欄」答啱 5 題數學，<br>就可以賺到 1 個代幣！</p>
+    <p class="warn-text">冇代幣抽唔到卡喇！<br>去「訓練欄」答啱 5 題數學，<br>小一至小六賺 1-6 個代幣！</p>
     <button class="btn-primary" onclick="closeWarn(); openTrain()">📚 去訓練</button>
     <button class="btn-ghost warn-cancel" onclick="closeWarn()">遲啲先</button>
   </div>
@@ -567,7 +577,7 @@ footer.app-footer .credit{font-size:11px;color:rgba(255,255,255,.38);margin-bott
     <h2>🎮 玩法說明</h2>
     <div class="tut-swipe">👆➡️</div>
     <p>抽卡要 <b style="color:#ffd700">1 個代幣 🪙</b>！</p>
-    <p>去<b style="color:#4ade80">「訓練欄」</b>答啱 5 題小一數學，就賺到 1 個代幣。</p>
+    <p>去<b style="color:#4ade80">「訓練欄」</b>答啱 5 題數學（小一至小六），就賺到 1-6 個代幣。</p>
     <p>喺卡包上橫掃（或點擊）就開到包！</p>
     <p>點擊卡片可以<b style="color:#ffd700">翻面</b>睇 HP、招式同稀有度。</p>
     <p>收集卡片入圖鑑，齊 1025 隻就完成！</p>
@@ -1463,31 +1473,101 @@ function openStats(){
 }
 function closeStats(){ document.getElementById('statsModal').classList.remove('show'); }
 
-// ===== TRAIN (小一數學訓練欄) =====
+// ===== TRAIN (小一至小六數學訓練欄) =====
 let trainQuestions = [];
 let trainIdx = 0;
 let trainCorrect = 0;
+let trainLevel = 1;          // 1=小一 ... 6=小六
+const LV_NAME = ['','小一','小二','小三','小四','小五','小六'];
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ [a,b]=[b,a%b]; } return a||1; }
 
-function genTrainQuestion(){
-  // 小一程度：加法/減法，結果 0-20
-  const type = Math.random() < 0.5 ? '+' : '-';
-  let a, b, ans;
-  if(type === '+'){
-    a = 1 + Math.floor(Math.random() * 10);   // 1-10
-    b = 1 + Math.floor(Math.random() * (20 - a)); // 和 <= 20
-    ans = a + b;
-  } else {
-    a = 2 + Math.floor(Math.random() * 19);   // 2-20
-    b = 1 + Math.floor(Math.random() * (a - 1)); // 差 >= 1
-    ans = a - b;
+// 按等級出題。type: int=整數 / dec=小數(1位) / frac=分數
+function genTrainQuestion(level){
+  const r=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  switch(level){
+    case 1: {  // 小一：20 以內加減
+      if(Math.random()<0.5){ const a=r(1,19), b=r(1,20-a); return {q:`${a} + ${b}`, ans:a+b, type:'int'}; }
+      const a=r(2,20), b=r(1,a-1); return {q:`${a} − ${b}`, ans:a-b, type:'int'};
+    }
+    case 2: {  // 小二：100 以內加減 + 乘法表
+      const kind=pick(['add','sub','mul']);
+      if(kind==='add'){ const a=r(10,89), b=r(10,99-a); return {q:`${a} + ${b}`, ans:a+b, type:'int'}; }
+      if(kind==='sub'){ const a=r(21,99), b=r(10,a-1); return {q:`${a} − ${b}`, ans:a-b, type:'int'}; }
+      const a=r(2,9), b=r(2,9); return {q:`${a} × ${b}`, ans:a*b, type:'int'};
+    }
+    case 3: {  // 小三：三位數加減 + 基本除法
+      const kind=pick(['add','sub','div']);
+      if(kind==='add'){ const a=r(100,499), b=r(100,999-a); return {q:`${a} + ${b}`, ans:a+b, type:'int'}; }
+      if(kind==='sub'){ const a=r(300,999), b=r(100,a-100); return {q:`${a} − ${b}`, ans:a-b, type:'int'}; }
+      const b=r(2,9), q=r(10,30); return {q:`${b*q} ÷ ${b}`, ans:q, type:'int'};
+    }
+    case 4: {  // 小四：兩位×一位 + 三位÷一位
+      if(Math.random()<0.5){ const a=r(12,99), b=r(2,9); return {q:`${a} × ${b}`, ans:a*b, type:'int'}; }
+      const b=r(2,9), q=r(21,99); return {q:`${b*q} ÷ ${b}`, ans:q, type:'int'};
+    }
+    case 5: {  // 小五：一位小數加減 + 同分母分數加減
+      if(Math.random()<0.5){
+        if(Math.random()<0.5){ const a=r(10,90), b=r(10,99-a); return {q:`${a/10} + ${b/10}`, ans:Math.round((a+b))/10, type:'dec'}; }
+        const a=r(21,99), b=r(10,a-1); return {q:`${a/10} − ${b/10}`, ans:Math.round((a-b))/10, type:'dec'};
+      }
+      const d=pick([2,3,4,5,6,8,10]);
+      const n1=r(1,d-1), n2=r(1,d-1-n1);   // 保證真分數（n1+n2 < d）
+      return {q:`${n1}/${d} + ${n2}/${d}`, ans:`${n1+n2}/${d}`, type:'frac'};
+    }
+    default: {  // 小六：百分數 + 異分母分數
+      if(Math.random()<0.5){
+        const p=pick([10,20,25,30,40,50,60,75]);
+        const base=pick([40,60,80,100,120,160,200,240]);   // base 全部係 20 倍數 → 答案必為整數
+        return {q:`${p}% 嘅 ${base}`, ans:base*p/100, type:'int'};
+      }
+      const pairs=[[2,4],[2,6],[3,6],[2,8],[3,4],[4,8],[2,10],[5,10]];
+      const [d1,d2]=pick(pairs);
+      const lcm=d1*d2/gcd(d1,d2);
+      const n1=r(1,d1-1), n2=r(1,d2-1);
+      const num=n1*(lcm/d1)+n2*(lcm/d2);
+      const g=gcd(num,lcm);
+      return {q:`${n1}/${d1} + ${n2}/${d2}`, ans:`${num/g}/${lcm/g}`, type:'frac'};
+    }
   }
-  return {a, b, op: type, ans};
 }
 
+function renderTrainLevels(){
+  const wrap=document.getElementById('trainLevels');
+  if(!wrap) return;
+  wrap.innerHTML='';
+  for(let lv=1;lv<=6;lv++){
+    const b=document.createElement('button');
+    b.className='lv-chip'+(lv===trainLevel?' on':'');
+    b.innerHTML=`${LV_NAME[lv]}<span class="lv-coin">🪙${lv}</span>`;
+    b.onclick=()=>setTrainLevel(lv);
+    wrap.appendChild(b);
+  }
+}
+function setTrainLevel(lv){
+  trainLevel=lv;
+  try{ localStorage.setItem('ptcg_train_lv', String(lv)); }catch(e){}
+  renderTrainLevels();
+  document.getElementById('trainSub').textContent=`答啱 5 題${LV_NAME[lv]}數學，賺 ${lv} 個代幣 🪙`;
+  const extra=document.getElementById('numpadExtra');
+  if(extra) extra.style.display = lv>=5 ? 'flex' : 'none';
+  // 切等級 → 重新出題
+  trainQuestions=[];
+  for(let i=0;i<5;i++) trainQuestions.push(genTrainQuestion(lv));
+  trainIdx=0; trainCorrect=0;
+  const again=document.getElementById('trainAgain');
+  if(again){ again.style.display='none'; again.classList.remove('train-again-glow'); }
+  renderTrain();
+}
 function openTrain(){
+  try{ trainLevel = parseInt(localStorage.getItem('ptcg_train_lv')||'1',10); if(trainLevel<1||trainLevel>6) trainLevel=1; }catch(e){ trainLevel=1; }
+  renderTrainLevels();
+  document.getElementById('trainSub').textContent=`答啱 5 題${LV_NAME[trainLevel]}數學，賺 ${trainLevel} 個代幣 🪙`;
+  const extra=document.getElementById('numpadExtra');
+  if(extra) extra.style.display = trainLevel>=5 ? 'flex' : 'none';
   // 重新生成 5 題
-  trainQuestions = [];
-  for(let i=0;i<5;i++) trainQuestions.push(genTrainQuestion());
+  trainQuestions=[];
+  for(let i=0;i<5;i++) trainQuestions.push(genTrainQuestion(trainLevel));
   trainIdx = 0;
   trainCorrect = 0;
   const again = document.getElementById('trainAgain');
@@ -1498,7 +1578,7 @@ function openTrain(){
 function trainAgain(){
   // 繼續訓練：重新出 5 題（唔使關 modal）
   trainQuestions = [];
-  for(let i=0;i<5;i++) trainQuestions.push(genTrainQuestion());
+  for(let i=0;i<5;i++) trainQuestions.push(genTrainQuestion(trainLevel));
   trainIdx = 0;
   trainCorrect = 0;
   const again = document.getElementById('trainAgain');
@@ -1518,9 +1598,9 @@ function renderTrain(){
     prog.appendChild(d);
   }
   if(trainIdx >= 5){
-    // 完成 5 題 → 獎代幣
+    // 完成 5 題 → 獎代幣（=等級數）
     document.getElementById('trainQ').innerHTML = '🎉 全部答啱！';
-    document.getElementById('trainFeedback').innerHTML = '<span style="color:#4ade80">+1 代幣 🪙</span>';
+    document.getElementById('trainFeedback').innerHTML = `<span style="color:#4ade80">+${trainLevel} 代幣 🪙</span>`;
     document.getElementById('trainAnswer').style.visibility = 'hidden';
     document.querySelector('.train-numpad').style.display = 'none';
     // 高亮「繼續訓練」按鈕（重新出 5 題）
@@ -1533,7 +1613,7 @@ function renderTrain(){
   const again = document.getElementById('trainAgain');
   if(again){ again.style.display = 'none'; again.classList.remove('train-again-glow'); }
   const q = trainQuestions[trainIdx];
-  document.getElementById('trainQ').innerHTML = `${q.a} <span class="q-sym">${q.op}</span> ${q.b} = <span class="q-sym">?</span>`;
+  document.getElementById('trainQ').innerHTML = `${q.q} = <span class="q-sym">?</span>`;
   document.getElementById('trainFeedback').innerHTML = '';
   document.getElementById('trainAnswer').style.visibility = '';
   document.querySelector('.train-numpad').style.display = '';
@@ -1546,31 +1626,50 @@ function setTrainAnswer(v){
   document.getElementById('trainAnswer').textContent = v === '' ? '0' : v;
 }
 function numpadPress(n){
-  if(trainAnswerStr.length >= 3) return;  // 答案最多 3 位數（小一答案 ≤ 20）
+  if(trainAnswerStr.length >= 7) return;   // 答案最多 7 字符（如 1998 / 17/12）
+  // 小數點：只能一個，且要有數字喺前面
+  if(n === '.'){
+    if(trainAnswerStr === '' || trainAnswerStr.includes('.')) return;
+  }
+  // 分數線：只能一個，且前後都要有數字
+  if(n === '/'){
+    if(trainAnswerStr === '' || trainAnswerStr.includes('/') || trainAnswerStr.endsWith('/')) return;
+  }
   setTrainAnswer(trainAnswerStr + n);
 }
 function numpadDel(){
   setTrainAnswer(trainAnswerStr.slice(0, -1));
 }
+function ansMatch(raw, q){
+  if(q.type === 'int') return parseInt(raw,10) === q.ans;
+  if(q.type === 'dec') return Math.abs(parseFloat(raw) - q.ans) < 0.005;
+  // frac：接受 a/b 或整數
+  const [nn, dd] = String(q.ans).split('/').map(Number);
+  if(raw.includes('/')){
+    const [n, d] = raw.split('/').map(Number);
+    return d > 0 && n * dd === nn * d;
+  }
+  return parseInt(raw,10) * dd === nn;
+}
 function checkAnswer(){
   if(trainIdx >= 5) return;
   const q = trainQuestions[trainIdx];
-  const val = parseInt(trainAnswerStr === '' ? '0' : trainAnswerStr, 10);
+  const raw = trainAnswerStr;
   const fb = document.getElementById('trainFeedback');
-  if(trainAnswerStr === ''){
+  if(raw === ''){
     fb.className = 'train-feedback no';
     fb.innerHTML = '請撳數字先';
     return;
   }
-  if(val === q.ans){
+  if(ansMatch(raw, q)){
     fb.className = 'train-feedback ok';
     fb.innerHTML = '✓ 答啱！';
     beep(660,.15,'sine',.12);
     trainCorrect++;
     trainIdx++;
     if(trainIdx >= 5){
-      // 完成 → +1 代幣
-      coins++;
+      // 完成 → +trainLevel 代幣
+      coins += trainLevel;
       saveState();
       updateStats();
       beep(880,.2,'sine',.14); beep(1108,.2,'sine',.14,.12); beep(1318,.3,'sine',.16,.24);
