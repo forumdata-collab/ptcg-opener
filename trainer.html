@@ -105,7 +105,7 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .card.pop{animation:cardPop .55s cubic-bezier(.2,1.2,.3,1) forwards}
 
 /* ===== 揭卡動畫 stage ===== */
-.card-stage{position:relative;width:100%;max-width:480px;height:340px;margin:0 auto 8px}
+.card-stage{position:relative;width:100%;max-width:480px;height:360px;margin:0 auto 8px}
 .scard{position:absolute;left:50%;top:14px;width:158px;height:222px;margin-left:-79px;perspective:900px;opacity:0;transition:transform .6s cubic-bezier(.2,.9,.3,1.1),opacity .3s}
 .card-stage .scard.in-stack{opacity:1;transform:translateY(0) rotate(0) scale(1)}
 .card-stage .scard.in-stack:hover{cursor:pointer}
@@ -274,7 +274,7 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 26px rgba(227,53,13,.6)}
 .btn-primary:active{transform:translateY(0)}
 .btn-ghost{background:rgba(255,255,255,.08);color:#ccc;border:1px solid rgba(255,255,255,.18);padding:12px 24px;border-radius:24px;font-size:14px;font-weight:700;cursor:pointer;min-height:44px}
-.result-actions{display:flex;gap:12px;margin-top:24px}
+.result-actions{display:flex;gap:12px;margin-top:34px}
 /* dex page */
 .dex-page{display:none;padding:18px 16px;min-height:calc(100vh - 90px)}
 .dex-page.show{display:block}
@@ -1115,10 +1115,10 @@ function renderResult(replay){
         tag.textContent='NEW';
         d.appendChild(tag);
       }
-      // 2) 放大 200%（移至舞台中線，睇 2 秒）
+      // 2) 放大 200%（移至舞台中線下方少少，避免撞到 header，睇 2 秒）
       setTimeout(()=>{
         d.style.transition='transform '+zoomD+'ms cubic-bezier(.2,1.1,.3,1)';
-        d.style.transform='translateY(30px) scale(2)';
+        d.style.transform='translateY(100px) scale(2)';
       }, flipMs);
       // 3) 縮返細 + 飛去 3+2 位置
       setTimeout(()=>{
@@ -1221,6 +1221,11 @@ function showView(v){
     document.getElementById('viewPack').style.display='flex';
     document.getElementById('viewResult').classList.remove('show');
     document.getElementById('swipeHint').style.display='flex';
+    // 還原卡包（由圖鑑返回時，卡包先前可能喺撕裂狀態）
+    document.getElementById('packBody').style.visibility='visible';
+    document.getElementById('pack').classList.remove('tearing');
+    document.getElementById('halfL').style.opacity=0;
+    document.getElementById('halfR').style.opacity=0;
   }else{
     document.getElementById('navDex').classList.add('active');
     document.getElementById('viewPack').style.display='none';
