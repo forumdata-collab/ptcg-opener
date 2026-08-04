@@ -93,16 +93,18 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .card-stage .scard.in-stack:nth-child(5){transform:translate(2px,3px) rotate(.4deg)}
 /* 移入 cards-row 後：static 定位 + 縮細（5 張排得落） */
 #cardsRow .scard{position:relative;left:auto;top:auto;margin-left:0;flex-shrink:0;width:108px;height:152px}
-#cardsRow .scard .card-face{border-radius:8px;border-width:2px}
-#cardsRow .scard .cf-name{font-size:9px}
-#cardsRow .scard .cf-name small{font-size:5px}
-#cardsRow .scard .cf-hp{font-size:7px}
-#cardsRow .scard .cf-img{margin:1px 0}
-#cardsRow .scard .type-tag{font-size:5.5px;padding:0 3px}
-#cardsRow .scard .cf-foot .rarity-badge{font-size:6px;padding:0 4px}
-#cardsRow .scard .cf-set{font-size:5px}
-#cardsRow .scard .sparkle i{font-size:8px}
-#cardsRow .scard .new-tag{font-size:9px;padding:2px 7px;top:-7px;right:-7px}
+/* 飛上 stage 後嘅縮細卡（同 row 一致） */
+.scard-small{width:108px !important;height:152px !important;margin-left:-54px !important}
+.scard-small .card-face,.scard-small#cardsRow .scard .card-face{border-radius:8px;border-width:2px}
+.scard-small .cf-name{font-size:9px}
+.scard-small .cf-name small{font-size:5px}
+.scard-small .cf-hp{font-size:7px}
+.scard-small .cf-img{margin:1px 0}
+.scard-small .type-tag{font-size:5.5px;padding:0 3px}
+.scard-small .cf-foot .rarity-badge{font-size:6px;padding:0 4px}
+.scard-small .cf-set{font-size:5px}
+.scard-small .sparkle i{font-size:8px}
+.scard-small .new-tag{font-size:9px;padding:2px 7px;top:-7px;right:-7px}
 /* 光芒預兆 */
 .card-stage::before{content:'';position:absolute;left:50%;top:50%;width:180px;height:260px;transform:translate(-50%,-50%) scale(.7);border-radius:18px;opacity:0;pointer-events:none;transition:opacity .5s}
 .card-stage.glow-gold::before{opacity:1;background:radial-gradient(ellipse at center,rgba(255,215,0,.65),rgba(255,180,0,.25) 55%,transparent 75%);animation:glowPulse 1.4s ease-in-out infinite;box-shadow:0 0 60px rgba(255,215,0,.5)}
@@ -680,31 +682,26 @@ function renderResult(){
     }, 200 + step*dur);
   });
 
-  // 全部翻開後，等 2 秒，然後一齊向上滑入 cards-row
+  // 全部翻開後，等 1 秒，然後一齊飛上 stage 區域停留（3+2 排列唔重疊）
   const totalT = 200 + 5*dur;
-  const flyUpT = totalT + 2000;   // 等 2 秒先上
-  const landT = flyUpT + 600;     // 滑 600ms 到位
+  const flyUpT = totalT + 1000;
+  // 3+2 佈局（108px 細卡）
+  const upTargets = [
+    {x:-142,y:0},   // row 0 col 0
+    {x:-24,y:0},    // row 0 col 1
+    {x:94,y:0},     // row 0 col 2
+    {x:-83,y:160},  // row 1 col 0
+    {x:35,y:160},   // row 1 col 1
+  ];
   setTimeout(()=>{
-    cards.forEach((d, i)=>{
-      // 向上滑入結果列
-      d.style.transition='transform .55s cubic-bezier(.2,1.1,.3,1),opacity .3s';
-      d.style.transform='';
+    cards.forEach((d,i)=>{
+      d.classList.add('scard-small');
+      d.style.transition='all .5s cubic-bezier(.2,1.1,.3,1),opacity .3s';
+      d.style.transform=`translateX(${upTargets[i].x}px) translateY(${upTargets[i].y}px)`;
     });
-    setTimeout(()=>{
-      cards.forEach(d=>{
-        d.style.position='relative';
-        d.style.left='auto'; d.style.top='auto';
-        d.style.margin='0';
-        d.style.transform='';
-        d.style.transition='';
-        row.appendChild(d);
-        row.style.display='flex';
-        d.style.opacity='1';
-      });
-    }, 600);
   }, flyUpT);
 
-  // 全部翻開後（落地先 celebrate）
+  // 全部翻開後（飛上完成先 celebrate）
   setTimeout(()=>{
     // God Pack 收尾
     if(isGod){ setTimeout(()=>godFlood.classList.remove('on'), 1600); celebrate(80); }
@@ -712,9 +709,9 @@ function renderResult(){
     else if(hasGold){ celebrate(45); }
     else if(hasUltra){ celebrate(30); }
     else if(currentCards.some(c=>c.fx==='fullart')){ celebrate(18); }
-  }, landT+400);
+  }, flyUpT+700);
   // 成就檢查
-  setTimeout(()=>checkAchievements(), landT+1500);
+  setTimeout(()=>checkAchievements(), flyUpT+1500);
 }
 
 // 翻開瞬間粒子爆
