@@ -270,8 +270,8 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .dex-search::placeholder{color:rgba(255,255,255,.4)}
 .dex-search:focus{border-color:#ffd700}
 .sub-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;min-height:38px}
-.dex-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.dex-slot{aspect-ratio:2/3;border-radius:10px;overflow:hidden;position:relative;background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.18);font-size:13px;cursor:default;content-visibility:auto;contain-intrinsic-size:auto 150px;contain:layout paint style}
+.dex-grid{position:relative;display:block;width:100%;margin-top:6px}
+.dex-slot{position:absolute;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,255,255,.12);display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.18);font-size:13px;cursor:default}
 .dex-slot.owned{border:1.5px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);cursor:pointer;transition:transform .2s}
 .dex-slot.owned:hover{transform:translateY(-3px)}
 .dex-slot img{width:100%;flex:1;min-height:0;object-fit:contain;display:block;background:radial-gradient(circle at 50% 40%,rgba(120,200,240,.2),transparent 75%)}
@@ -990,31 +990,73 @@ function matchesFilter(c){
   if(searchQ && !c.zh.includes(searchQ)) return false;
   return true;
 }
+// ===== DEX (虛擬滾動：只渲染視窗內嘅卡) =====
+const DEX_COLS = 3, DEX_GAP = 12;
+let dexFiltered = [];            // 符合當前 filter 嘅卡
+let dexGridTop = 0;              // grid 頂部 document 座標
+let dexWin = {start:-1, end:-1}; // 上次渲染嘅行範圍
+let winUpdatePending = false;    // scroll rAF throttle
+function dexLayout(){
+  const grid = document.getElementById('dexGrid');
+  const w = grid.clientWidth || 320;
+  const slotW = (w - DEX_GAP*(DEX_COLS-1)) / DEX_COLS;
+  const slotH = Math.round(slotW * 1.5);   // 2:3 卡比例
+  return {slotW, slotH, rowH: slotH + DEX_GAP};
+}
 function renderDex(){
   const grid=document.getElementById('dexGrid');
-  grid.innerHTML='';
   let owned=0;
+  dexFiltered=[];
   CARDS.forEach(c=>{
-    const have = collection[c.id];
-    if(have) owned++;
-    if(!matchesFilter(c)) return;
-    const slot=document.createElement('div');
-    const isShiny = have && have.shiny;
-    slot.className='dex-slot'+(have?' owned':'')+(isShiny?' shiny':'');
-    if(have){
-      const tags = [];
-      tags.push(`<span class="dex-tags">(${TIER[c.tier].label})</span>`);
-      if(have.count>1) tags.push(`<span class="dex-tags">(×${have.count})</span>`);
-      if(isShiny) tags.push('<span class="dex-tags">(✨)</span>');
-      slot.innerHTML=`<img src="${c.img}" alt="${c.zh}" loading="lazy"><div class="dex-info"><div class="dex-name"><span class="dn">${c.zh}</span>${tags.join('')}</div></div>${isShiny?'<span class="dex-shiny-badge">✨閃光</span>':''}`;
-      slot.onclick=()=>openModal(c, isShiny);
-    }else{
-      slot.innerHTML='<span>?</span>';
-    }
-    grid.appendChild(slot);
+    if(collection[c.id]) owned++;
+    if(matchesFilter(c)) dexFiltered.push(c);
   });
   document.getElementById('dexCount').textContent = `${owned} / 1025`;
   document.getElementById('dexFill').style.width = (owned/1025*100)+'%';
+  const {rowH} = dexLayout();
+  const rows = Math.ceil(dexFiltered.length/DEX_COLS);
+  grid.style.height = (rows ? rows*rowH - DEX_GAP : 0)+'px';
+  dexGridTop = grid.offsetTop;
+  dexWin = {start:-1, end:-1};
+  grid.innerHTML='';
+  updateDexWindow();
+}
+function updateDexWindow(){
+  if(!document.getElementById('viewDex').classList.contains('show')) return;
+  const grid=document.getElementById('dexGrid');
+  if(!dexFiltered.length) return;
+  const {slotW, slotH, rowH} = dexLayout();
+  const rows = Math.ceil(dexFiltered.length/DEX_COLS);
+  // 可見行範圍 + 上下 buffer 3 行
+  const top = window.scrollY - dexGridTop;
+  const start = Math.max(0, Math.floor(top/rowH) - 3);
+  const end = Math.min(rows, Math.ceil((top + window.innerHeight)/rowH) + 3);
+  if(start===dexWin.start && end===dexWin.end) return;  // 範圍冇變 → 唔重畫
+  dexWin = {start, end};
+  grid.innerHTML='';
+  for(let row=start; row<end; row++){
+    for(let col=0; col<DEX_COLS; col++){
+      const idx = row*DEX_COLS + col;
+      const c = dexFiltered[idx];
+      if(!c) continue;
+      const have = collection[c.id];
+      const isShiny = have && have.shiny;
+      const slot = document.createElement('div');
+      slot.className = 'dex-slot'+(have?' owned':'')+(isShiny?' shiny':'');
+      slot.style.cssText = `left:${col*(slotW+DEX_GAP)}px;top:${row*rowH}px;width:${slotW}px;height:${slotH}px`;
+      if(have){
+        const tags = [];
+        tags.push(`<span class="dex-tags">(${TIER[c.tier].label})</span>`);
+        if(have.count>1) tags.push(`<span class="dex-tags">(×${have.count})</span>`);
+        if(isShiny) tags.push('<span class="dex-tags">(✨)</span>');
+        slot.innerHTML=`<img src="${c.img}" alt="${c.zh}" loading="lazy" ${imgOnError(c.zh)}><div class="dex-info"><div class="dex-name"><span class="dn">${c.zh}</span>${tags.join('')}</div></div>${isShiny?'<span class="dex-shiny-badge">✨閃光</span>':''}`;
+        slot.onclick=()=>openModal(c, isShiny);
+      }else{
+        slot.innerHTML='<span>?</span>';
+      }
+      grid.appendChild(slot);
+    }
+  }
 }
 function openModal(c, shiny){
   // 建立已收集卡瀏覽清單（按圖鑑順序），定位到目標卡
@@ -1365,9 +1407,15 @@ function scrollTopSmooth(){
 }
 window.addEventListener('scroll', () => {
   const btn = document.getElementById('backTop');
-  if(!btn) return;
-  // 圖鑑頁先顯示（scroll 超過 600px）
-  btn.classList.toggle('show', window.scrollY > 600);
+  if(btn) btn.classList.toggle('show', window.scrollY > 600);
+  // 虛擬滾動：rAF throttle 更新可見窗口
+  if(!winUpdatePending){
+    winUpdatePending = true;
+    requestAnimationFrame(()=>{ winUpdatePending=false; updateDexWindow(); });
+  }
+}, {passive: true});
+window.addEventListener('resize', () => {
+  if(document.getElementById('viewDex').classList.contains('show')) renderDex();
 }, {passive: true});
 
 // ===== TUTORIAL =====
