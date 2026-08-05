@@ -1168,7 +1168,15 @@ function burstFx(cardEl, n){
   setTimeout(()=>b.remove(), 1400);
 }
 
+const IMG_PROXY = 'https://hermesagent.de5.net:2096/ptcg-img';
 function fallbackImg(el, name){
+  // 兩層 fallback：原圖失敗 → proxy → 先至 pokeball 剪影
+  const src = el.getAttribute('src') || '';
+  if(src.startsWith('https://asia.pokemon-card.com') && !el.dataset.proxied){
+    el.dataset.proxied = '1';
+    el.src = IMG_PROXY + src.replace('https://asia.pokemon-card.com', '');
+    return;
+  }
   // 載入失敗 → 寶可夢球剪影 + 名稱
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'>
     <rect width='140' height='140' fill='#eef1f6'/>
