@@ -467,6 +467,12 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .train-again{width:100%;background:linear-gradient(135deg,#ffd700,#ff8c00);color:#222;border:none;border-radius:16px;font-size:17px;font-weight:900;letter-spacing:1px;cursor:pointer;padding:16px 0;min-height:54px;margin-bottom:10px;box-shadow:0 8px 26px rgba(255,215,0,.45)}
 .train-again-glow{animation:trainGlow 1.4s ease-in-out infinite}
 @keyframes trainGlow{0%,100%{box-shadow:0 8px 26px rgba(255,215,0,.45);transform:scale(1)}50%{box-shadow:0 10px 40px rgba(255,215,0,.85);transform:scale(1.04)}}
+/* train v3 自適應：難度徽章 / 提示 / 解題步驟 */
+.diff-badge{display:inline-block;margin-left:6px;background:rgba(255,215,0,.15);border:1px solid rgba(255,215,0,.5);color:#ffd700;font-size:10px;font-weight:800;padding:1px 8px;border-radius:10px;vertical-align:middle}
+.hint-txt{color:#ffd700;font-style:italic}
+.steps{margin-top:6px;font-size:12px;font-weight:600;color:rgba(255,255,255,.75);line-height:1.6}
+.step{padding:2px 0}
+
 /* warn modal */
 .warn-modal{position:fixed;inset:0;background:rgba(0,0,0,.9);backdrop-filter:blur(8px);z-index:330;display:none;align-items:center;justify-content:center;padding:20px}
 .warn-modal.show{display:flex}
@@ -1921,65 +1927,106 @@ function openStats(){
 }
 function closeStats(){ document.getElementById('statsModal').classList.remove('show'); }
 
-// ===== TRAIN (小一至小六數學訓練欄) =====
+// ===== TRAIN (小一至小六數學訓練欄) V3 自適應引擎 =====
+// 對照 HK Primary Math AI Question Bank V3.0 規格：
+//   - 難度分數 1-100（基礎認知/一般課堂/校內測驗/精英題/拔尖）
+//   - 答對：連啱3題難度+5、連啱5題升級下一級
+//   - 答錯：第一次提示 → 第二次相似題 → 第三次基礎概念題 → 再錯顯示答案
+//   - 錯題降難度 -5；每級難度獨立存 localStorage
 let trainQuestions = [];
 let trainIdx = 0;
 let trainCorrect = 0;
 let trainLevel = 1;          // 1=小一 ... 6=小六
+let trainDifficulty = 40;    // 自適應難度分數（每級獨立存）
+let trainStreak = 0;         // 連續答啱題數（連啱3→+5，連啱5→升班）
 const LV_NAME = ['','小一','小二','小三','小四','小五','小六'];
+const DIFF_BAND = [[1,'基礎認知'],[21,'一般課堂'],[41,'校內測驗'],[61,'精英題'],[81,'拔尖']];
+function diffBand(D){ let n='拔尖'; for(const [min,b] of DIFF_BAND){ if(D>=min) n=b; } return n; }
+function diffPersist(){ try{ localStorage.setItem('ptcg_train_diff_'+trainLevel, String(trainDifficulty)); }catch(e){} }
+function diffLoad(){ try{ return parseInt(localStorage.getItem('ptcg_train_diff_'+trainLevel)||'40',10)||40; }catch(e){ return 40; } }
 function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); while(b){ [a,b]=[b,a%b]; } return a||1; }
 
-// 按等級出題。type: int=整數 / dec=小數(1位) / frac=分數
-function genTrainQuestion(level){
+// 等級 → 主題池（對應規格 Topic Code）
+const LV_KINDS = {1:['ADD','SUB'], 2:['ADD','SUB','MUL'], 3:['ADD','SUB','DIV'],
+                  4:['MUL','DIV'], 5:['DEC','FRAC'], 6:['PCT','FRAC']};
+const KIND_NAME = {ADD:'加法',SUB:'減法',MUL:'乘法',DIV:'除法',DEC:'小數',FRAC:'分數',PCT:'百分數'};
+
+// 按等級+主題+難度出題。D=難度分數(1-100)；type: int/dec/frac
+function genByKind(level, kind, D){
   const r=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
   const pick=a=>a[Math.floor(Math.random()*a.length)];
-  switch(level){
-    case 1: {  // 小一：20 以內加減
-      if(Math.random()<0.5){ const a=r(1,19), b=r(1,20-a); return {q:`${a} + ${b}`, ans:a+b, type:'int'}; }
-      const a=r(2,20), b=r(1,a-1); return {q:`${a} − ${b}`, ans:a-b, type:'int'};
+  const H = {ADD:'由個位開始加，滿 10 要進 1', SUB:'由個位開始減，唔夠減要向高位借 1',
+    MUL:'逐位相乘，記得進位', DIV:'諗下幾多乘返除數等於被除數', DEC:'小數點對齊先加減',
+    FRAC:'分母相同，分子直接相加', PCT:'先計 1% 係幾多，再乘返百分比'};
+  // 難度縮放：數值範圍隨 D 增大（D=50 → 1.0×，D=100 → 1.5×，D=1 → 0.5×）
+  const sc=(base)=>Math.max(1, Math.round(base*(0.5+D/100)));
+  switch(kind){
+    case 'ADD': {
+      if(level===1){ const m=sc(12); const a=r(1,m), b=r(1,m); return {q:`${a} + ${b}`, ans:a+b, type:'int', kind:'ADD', hint:H.ADD, steps:[`${a}+${b}=${a+b}`]}; }
+      const m=sc(60); const a=r(10,m), b=r(10,99-a); return {q:`${a} + ${b}`, ans:a+b, type:'int', kind:'ADD', hint:H.ADD, steps:[`${a}+${b}=${a+b}`]};
     }
-    case 2: {  // 小二：100 以內加減 + 乘法表
-      const kind=pick(['add','sub','mul']);
-      if(kind==='add'){ const a=r(10,89), b=r(10,99-a); return {q:`${a} + ${b}`, ans:a+b, type:'int'}; }
-      if(kind==='sub'){ const a=r(21,99), b=r(10,a-1); return {q:`${a} − ${b}`, ans:a-b, type:'int'}; }
-      const a=r(2,9), b=r(2,9); return {q:`${a} × ${b}`, ans:a*b, type:'int'};
+    case 'SUB': {
+      if(level===1){ const m=sc(12); const a=r(2,m), b=r(1,a-1); return {q:`${a} − ${b}`, ans:a-b, type:'int', kind:'SUB', hint:H.SUB, steps:[`${a}−${b}=${a-b}`]}; }
+      const m=sc(80); const a=r(21,m), b=r(10,a-1); return {q:`${a} − ${b}`, ans:a-b, type:'int', kind:'SUB', hint:H.SUB, steps:[`${a}−${b}=${a-b}`]};
     }
-    case 3: {  // 小三：三位數加減 + 基本除法
-      const kind=pick(['add','sub','div']);
-      if(kind==='add'){ const a=r(100,499), b=r(100,999-a); return {q:`${a} + ${b}`, ans:a+b, type:'int'}; }
-      if(kind==='sub'){ const a=r(300,999), b=r(100,a-100); return {q:`${a} − ${b}`, ans:a-b, type:'int'}; }
-      const b=r(2,9), q=r(10,30); return {q:`${b*q} ÷ ${b}`, ans:q, type:'int'};
+    case 'MUL': {
+      if(level===2){ const m=sc(8); const a=r(2,m), b=r(2,m); return {q:`${a} × ${b}`, ans:a*b, type:'int', kind:'MUL', hint:H.MUL, steps:[`${a}×${b}=${a*b}`]}; }
+      // 小四：兩位×一位；精英難度 → 三位×一位
+      const a = D>=70 ? r(sc(120), 999) : r(12, sc(80));
+      const b = r(2,9);
+      return {q:`${a} × ${b}`, ans:a*b, type:'int', kind:'MUL', hint:H.MUL, steps:[`${a}×${b}=${a*b}`]};
     }
-    case 4: {  // 小四：兩位×一位 + 三位÷一位
-      if(Math.random()<0.5){ const a=r(12,99), b=r(2,9); return {q:`${a} × ${b}`, ans:a*b, type:'int'}; }
-      const b=r(2,9), q=r(21,99); return {q:`${b*q} ÷ ${b}`, ans:q, type:'int'};
+    case 'DIV': {
+      const b=r(2,9), q=r(10, sc(40)); return {q:`${b*q} ÷ ${b}`, ans:q, type:'int', kind:'DIV', hint:H.DIV, steps:[`${b}×${q}=${b*q}，所以 ${b*q}÷${b}=${q}`]};
     }
-    case 5: {  // 小五：一位小數加減 + 同分母分數加減
-      if(Math.random()<0.5){
-        if(Math.random()<0.5){ const a=r(10,90), b=r(10,99-a); return {q:`${a/10} + ${b/10}`, ans:Math.round((a+b))/10, type:'dec'}; }
-        const a=r(21,99), b=r(10,a-1); return {q:`${a/10} − ${b/10}`, ans:Math.round((a-b))/10, type:'dec'};
+    case 'DEC': {
+      // 小五：1位小數；精英難度 → 2位小數
+      const places = D>=70 ? 2 : 1;
+      const p=Math.pow(10,places), m=sc(60);
+      if(Math.random()<0.5){ const a=r(p,m), b=r(p, m*9 - a); return {q:`${(a/p).toFixed(places)} + ${(b/p).toFixed(places)}`, ans:Math.round((a+b))/p, type:'dec', kind:'DEC', hint:H.DEC, steps:[`${(a/p).toFixed(places)}+${(b/p).toFixed(places)}=${((a+b)/p).toFixed(places)}`]}; }
+      const a=r(2*p, m*9), b=r(p, a-p); return {q:`${(a/p).toFixed(places)} − ${(b/p).toFixed(places)}`, ans:Math.round((a-b))/p, type:'dec', kind:'DEC', hint:H.DEC, steps:[`${(a/p).toFixed(places)}−${(b/p).toFixed(places)}=${((a-b)/p).toFixed(places)}`]};
+    }
+    case 'FRAC': {
+      if(level===5){ // 同分母
+        const d=pick([2,3,4,5,6,8,10]);
+        const n1=r(1,d-1), n2=r(1,d-1-n1);
+        return {q:`${n1}/${d} + ${n2}/${d}`, ans:`${n1+n2}/${d}`, type:'frac', kind:'FRAC', hint:H.FRAC, steps:[`${n1}/${d}+${n2}/${d}=${n1+n2}/${d}`]};
       }
-      const d=pick([2,3,4,5,6,8,10]);
-      const n1=r(1,d-1), n2=r(1,d-1-n1);   // 保證真分數（n1+n2 < d）
-      return {q:`${n1}/${d} + ${n2}/${d}`, ans:`${n1+n2}/${d}`, type:'frac'};
-    }
-    default: {  // 小六：百分數 + 異分母分數
-      if(Math.random()<0.5){
-        const p=pick([10,20,25,30,40,50,60,75]);
-        const base=pick([40,60,80,100,120,160,200,240]);   // base 全部係 20 倍數 → 答案必為整數
-        return {q:`${p}% 嘅 ${base}`, ans:base*p/100, type:'int'};
-      }
-      const pairs=[[2,4],[2,6],[3,6],[2,8],[3,4],[4,8],[2,10],[5,10]];
-      const [d1,d2]=pick(pairs);
+      // 小六：異分母；高難度 → 大分母
+      const ds = D>=70 ? [4,6,8,9,10,12] : [[2,4],[2,6],[3,6],[2,8],[3,4],[4,8],[2,10],[5,10]];
+      let d1,d2;
+      if(Array.isArray(ds[0])){ [d1,d2]=pick(ds); } else { d1=pick(ds); d2=pick(ds.filter(x=>x!==d1)); }
       const lcm=d1*d2/gcd(d1,d2);
       const n1=r(1,d1-1), n2=r(1,d2-1);
       const num=n1*(lcm/d1)+n2*(lcm/d2);
       const g=gcd(num,lcm);
-      return {q:`${n1}/${d1} + ${n2}/${d2}`, ans:`${num/g}/${lcm/g}`, type:'frac'};
+      return {q:`${n1}/${d1} + ${n2}/${d2}`, ans:`${num/g}/${lcm/g}`, type:'frac', kind:'FRAC', hint:H.FRAC, steps:[`通分做 ${lcm}：${n1}/${d1}=${n1*(lcm/d1)}/${lcm}，${n2}/${d2}=${n2*(lcm/d2)}/${lcm}`, `${num}/${lcm}，約簡後 = ${num/g}/${lcm/g}`]};
+    }
+    default: { // PCT 小六百分數
+      if(D>=70){ // 精英：非整數答案（如 20% 嘅 56 = 11.2）
+        const p=pick([20,30,45,55,65,85]);
+        const base=pick([32,56,88,104,152,176,216,248]);
+        const v=Math.round(base*p)/100;
+        return {q:`${p}% 嘅 ${base}`, ans:base*p/100, type:'dec', kind:'PCT', hint:H.PCT, steps:[`1% 係 ${base/100}，${p}% = ${base/100}×${p} = ${v}`]};
+      }
+      const p=pick([10,20,25,30,40,50,60,75]);
+      const base=pick([40,60,80,100,120,160,200,240]);
+      return {q:`${p}% 嘅 ${base}`, ans:base*p/100, type:'int', kind:'PCT', hint:H.PCT, steps:[`1% 係 ${base/100}，${p}% = ${base/100}×${p} = ${base*p/100}`]};
     }
   }
 }
-
+function genTrainQuestion(level, D){
+  const kinds = LV_KINDS[level] || ['ADD'];
+  return genByKind(level, kinds[Math.floor(Math.random()*kinds.length)], D);
+}
+// 相似題：同主題、難度 -10（答錯第二次時出）
+function genSimilar(q, level, D){
+  return genByKind(level, q.kind, Math.max(1, D-10));
+}
+// 基礎概念題：同主題、難度 10（答錯第三次時出）
+function genBasicQuestion(q, level){
+  return genByKind(level, q.kind, 10);
+}
 function renderTrainLevels(){
   const wrap=document.getElementById('trainLevels');
   if(!wrap) return;
@@ -1994,28 +2041,40 @@ function renderTrainLevels(){
 }
 function setTrainLevel(lv){
   trainLevel=lv;
+  trainDifficulty=diffLoad();
+  trainStreak=0;
   try{ localStorage.setItem('ptcg_train_lv', String(lv)); }catch(e){}
   renderTrainLevels();
-  document.getElementById('trainSub').textContent=`答啱 5 題${LV_NAME[lv]}數學，賺 ${lv} 個代幣 🪙`;
+  const sub=document.getElementById('trainSub');
+  sub.innerHTML=`答啱 5 題${LV_NAME[lv]}數學，賺 ${lv} 個代幣 🪙 <span class="diff-badge" id="diffBadge"></span>`;
+  renderDiffBadge();
   const extra=document.getElementById('numpadExtra');
   if(extra) extra.style.display = lv>=5 ? 'flex' : 'none';
   // 切等級 → 重新出題
   trainQuestions=[];
-  for(let i=0;i<5;i++) trainQuestions.push(genTrainQuestion(lv));
+  for(let i=0;i<5;i++) trainQuestions.push(genTrainQuestion(lv, trainDifficulty));
   trainIdx=0; trainCorrect=0;
   const again=document.getElementById('trainAgain');
   if(again){ again.style.display='none'; again.classList.remove('train-again-glow'); }
   renderTrain();
 }
+function renderDiffBadge(){
+  const b=document.getElementById('diffBadge');
+  if(b) b.textContent = `難度 ${trainDifficulty} · ${diffBand(trainDifficulty)}`;
+}
 function openTrain(){
   try{ trainLevel = parseInt(localStorage.getItem('ptcg_train_lv')||'1',10); if(trainLevel<1||trainLevel>6) trainLevel=1; }catch(e){ trainLevel=1; }
+  trainDifficulty=diffLoad();
+  trainStreak=0;
   renderTrainLevels();
-  document.getElementById('trainSub').textContent=`答啱 5 題${LV_NAME[trainLevel]}數學，賺 ${trainLevel} 個代幣 🪙`;
+  const sub=document.getElementById('trainSub');
+  sub.innerHTML=`答啱 5 題${LV_NAME[trainLevel]}數學，賺 ${trainLevel} 個代幣 🪙 <span class="diff-badge" id="diffBadge"></span>`;
+  renderDiffBadge();
   const extra=document.getElementById('numpadExtra');
   if(extra) extra.style.display = trainLevel>=5 ? 'flex' : 'none';
   // 重新生成 5 題
   trainQuestions=[];
-  for(let i=0;i<5;i++) trainQuestions.push(genTrainQuestion(trainLevel));
+  for(let i=0;i<5;i++) trainQuestions.push(genTrainQuestion(trainLevel, trainDifficulty));
   trainIdx = 0;
   trainCorrect = 0;
   const again = document.getElementById('trainAgain');
@@ -2026,9 +2085,10 @@ function openTrain(){
 function trainAgain(){
   // 繼續訓練：重新出 5 題（唔使關 modal）
   trainQuestions = [];
-  for(let i=0;i<5;i++) trainQuestions.push(genTrainQuestion(trainLevel));
+  for(let i=0;i<5;i++) trainQuestions.push(genTrainQuestion(trainLevel, trainDifficulty));
   trainIdx = 0;
   trainCorrect = 0;
+  trainStreak = 0;
   const again = document.getElementById('trainAgain');
   if(again){ again.style.display = 'none'; again.classList.remove('train-again-glow'); }
   renderTrain();
@@ -2046,9 +2106,21 @@ function renderTrain(){
     prog.appendChild(d);
   }
   if(trainIdx >= 5){
-    // 完成 5 題 → 獎代幣（=等級數）
+    // 完成 5 題 → 獎代幣（=等級數）；連啱5題 → 升級下一級
     document.getElementById('trainQ').innerHTML = '🎉 全部答啱！';
-    document.getElementById('trainFeedback').innerHTML = `<span style="color:#4ade80">+${trainLevel} 代幣 🪙</span>`;
+    let msg = `<span style="color:#4ade80">+${trainLevel} 代幣 🪙</span>`;
+    if(trainStreak >= 5 && trainLevel < 6){
+      trainLevel++;
+      trainDifficulty = 40;
+      diffPersist();
+      try{ localStorage.setItem('ptcg_train_lv', String(trainLevel)); }catch(e){}
+      renderTrainLevels();
+      const sub=document.getElementById('trainSub');
+      sub.innerHTML=`答啱 5 題${LV_NAME[trainLevel]}數學，賺 ${trainLevel} 個代幣 🪙 <span class="diff-badge" id="diffBadge"></span>`;
+      renderDiffBadge();
+      msg += `<br><span style="color:#ffd700">🔥 連啱 5 題！升級到 ${LV_NAME[trainLevel]}！</span>`;
+    }
+    document.getElementById('trainFeedback').innerHTML = msg;
     document.getElementById('trainAnswer').style.visibility = 'hidden';
     document.querySelector('.train-numpad').style.display = 'none';
     // 高亮「繼續訓練」按鈕（重新出 5 題）
@@ -2061,6 +2133,9 @@ function renderTrain(){
   const again = document.getElementById('trainAgain');
   if(again){ again.style.display = 'none'; again.classList.remove('train-again-glow'); }
   const q = trainQuestions[trainIdx];
+  trainLastQ = q;            // 自適應流程用嘅現時題目
+  trainWrongCount = 0;       // 新題目重置答錯計數
+  renderDiffBadge();
   document.getElementById('trainQ').innerHTML = `${q.q} = <span class="q-sym">?</span>`;
   document.getElementById('trainFeedback').innerHTML = '';
   document.getElementById('trainAnswer').style.visibility = '';
@@ -2069,6 +2144,8 @@ function renderTrain(){
 }
 // 答案狀態
 let trainAnswerStr = '';
+let trainWrongCount = 0;   // 當前題連續答錯次數（0→提示,1→相似題,2→基礎題,3→揭曉）
+let trainLastQ = null;     // 現時題目（相似/基礎題替換用）
 function setTrainAnswer(v){
   trainAnswerStr = v;
   document.getElementById('trainAnswer').textContent = v === '' ? '0' : v;
@@ -2101,7 +2178,7 @@ function ansMatch(raw, q){
 }
 function checkAnswer(){
   if(trainIdx >= 5) return;
-  const q = trainQuestions[trainIdx];
+  const q = trainLastQ;
   const raw = trainAnswerStr;
   const fb = document.getElementById('trainFeedback');
   if(raw === ''){
@@ -2111,9 +2188,17 @@ function checkAnswer(){
   }
   if(ansMatch(raw, q)){
     fb.className = 'train-feedback ok';
-    fb.innerHTML = '✓ 答啱！';
+    fb.innerHTML = '✓ 答啱！' + (trainWrongCount>0 ? `（試咗 ${trainWrongCount+1} 次）` : '');
     beep(660,.15,'sine',.12);
     trainCorrect++;
+    trainStreak++;
+    // 連啱 3 題 → 難度 +5（自適應）
+    if(trainStreak % 3 === 0 && trainDifficulty < 100){
+      trainDifficulty = Math.min(100, trainDifficulty + 5);
+      diffPersist();
+      toast(`📈 連啱 ${trainStreak} 題，難度提升至 ${trainDifficulty}`);
+    }
+    trainWrongCount = 0;
     trainIdx++;
     if(trainIdx >= 5){
       // 完成 → +trainLevel 代幣
@@ -2125,10 +2210,42 @@ function checkAnswer(){
     }
     setTimeout(renderTrain, 600);
   } else {
-    fb.className = 'train-feedback no';
-    fb.innerHTML = `✗ 唔啱，再試吓！正確答案係 <span class="correct">${q.ans}</span>`;
-    beep(220,.2,'square',.1);
-    setTrainAnswer('');
+    trainWrongCount++;
+    if(trainWrongCount === 1){
+      // 第一次錯 → 提示，再試
+      fb.className = 'train-feedback no';
+      fb.innerHTML = `✗ 差少少！提示：<span class="hint-txt">${q.hint||'再諗清楚'}</span>`;
+      beep(220,.2,'square',.1);
+      setTrainAnswer('');
+    } else if(trainWrongCount === 2){
+      // 第二次錯 → 相似題（同主題、難度-10）
+      trainLastQ = genSimilar(q, trainLevel, trainDifficulty);
+      document.getElementById('trainQ').innerHTML = `${trainLastQ.q} = <span class="q-sym">?</span>`;
+      fb.className = 'train-feedback no';
+      fb.innerHTML = '✗ 換條相似題（易少少）再試：';
+      beep(220,.2,'square',.1);
+      setTrainAnswer('');
+    } else if(trainWrongCount === 3){
+      // 第三次錯 → 基礎概念題（難度10）
+      trainLastQ = genBasicQuestion(q, trainLevel);
+      document.getElementById('trainQ').innerHTML = `${trainLastQ.q} = <span class="q-sym">?</span>`;
+      fb.className = 'train-feedback no';
+      fb.innerHTML = '✗ 試下基礎概念題：';
+      beep(220,.2,'square',.1);
+      setTrainAnswer('');
+    } else {
+      // 第四次錯 → 揭曉答案 + 解題步驟；難度-5（錯題降難度）
+      fb.className = 'train-feedback no';
+      const steps = (trainLastQ.steps||[]).map(s=>`<div class="step">${s}</div>`).join('');
+      fb.innerHTML = `✗ 正確答案係 <span class="correct">${trainLastQ.ans}</span><div class="steps">${steps}</div>`;
+      beep(220,.25,'square',.1);
+      trainDifficulty = Math.max(1, trainDifficulty - 5);
+      diffPersist();
+      trainStreak = 0;         // 斷連勝
+      trainWrongCount = 0;
+      trainIdx++;
+      setTimeout(renderTrain, 1800);
+    }
   }
 }
 // 鍵盤按鈕綁定
