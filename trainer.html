@@ -415,6 +415,33 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .modal-nav-btn:active{background:rgba(255,215,0,.3)}
 .modal-nav-btn:disabled{opacity:.25;cursor:default}
 .modal-counter{color:#ffd700;font-weight:800;font-size:14px;min-width:64px;text-align:center}
+/* 圖鑑 3D 觀賞：傾斜 + 鐳射膜（Holo Foil） */
+.modal-card{perspective:1200px}
+.modal-card .card{transform-style:preserve-3d}
+.modal-card .card-inner{transform:rotateY(180deg) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .14s ease-out}
+.modal-card .cf-img{transform-style:preserve-3d}
+.modal-card .cf-img img{transform:translate(var(--px,0px),var(--py,0px)) scale(1.08);transition:transform .14s ease-out}
+.holo-layer{position:absolute;inset:0;z-index:4;pointer-events:none;mix-blend-mode:screen;border-radius:8px;opacity:.55;
+  background:
+    radial-gradient(circle at var(--hx,50%) var(--hy,50%), rgba(255,255,255,.95) 0 1.2%, transparent 2.5%),
+    radial-gradient(circle at calc(var(--hx,50%) + 16%) calc(var(--hy,50%) - 14%), rgba(255,255,255,.85) 0 1%, transparent 2%),
+    radial-gradient(circle at calc(var(--hx,50%) - 20%) calc(var(--hy,50%) + 10%), rgba(255,255,255,.9) 0 1%, transparent 2%),
+    linear-gradient(115deg, transparent 22%, rgba(255,90,200,.5) 36%, rgba(130,220,255,.55) 45%, rgba(255,235,150,.6) 52%, rgba(140,255,190,.5) 59%, rgba(215,150,255,.45) 66%, transparent 78%);
+  background-size:320% 320%,320% 320%,320% 320%,320% 320%;
+  transition:background-position .14s ease-out}
+.modal-card.m-shiny .holo-layer{opacity:.9}
+.modal-card.m-t2 .holo-layer{opacity:1}
+/* 超稀有：彩虹光暈 + 星點更閃 */
+.modal-card.m-t3 .card-front{animation:rainbowGlow 2.6s ease-in-out infinite}
+@keyframes rainbowGlow{0%,100%{box-shadow:0 0 22px rgba(168,85,247,.55),0 14px 40px rgba(0,0,0,.55)}50%{box-shadow:0 0 46px rgba(255,215,0,.8),0 14px 40px rgba(0,0,0,.55)}}
+.modal-card.m-t3 .holo-layer{opacity:1;
+  background:
+    radial-gradient(circle at var(--hx,50%) var(--hy,50%), rgba(255,255,255,1) 0 1.4%, transparent 2.8%),
+    radial-gradient(circle at calc(var(--hx,50%) + 14%) calc(var(--hy,50%) - 12%), rgba(255,255,255,.95) 0 1.2%, transparent 2.4%),
+    radial-gradient(circle at calc(var(--hx,50%) - 18%) calc(var(--hy,50%) + 12%), rgba(255,255,255,.95) 0 1.2%, transparent 2.4%),
+    radial-gradient(circle at calc(var(--hx,50%) + 24%) calc(var(--hy,50%) + 16%), rgba(255,255,255,.85) 0 1%, transparent 2%),
+    linear-gradient(115deg, transparent 18%, rgba(255,90,200,.6) 34%, rgba(130,220,255,.65) 44%, rgba(255,235,150,.7) 52%, rgba(140,255,190,.6) 60%, rgba(215,150,255,.55) 68%, transparent 80%);
+  background-size:320% 320%,320% 320%,320% 320%,320% 320%,320% 320%}
 /* stats modal */
 .stats-modal{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);z-index:310;display:none;align-items:center;justify-content:center;padding:20px}
 .stats-modal.show{display:flex}
@@ -1641,6 +1668,15 @@ function renderModalCard(){
   const mc = document.getElementById('modalCard');
   mc.innerHTML =
     `<div class="card"><div class="card-inner">${cardHTML({...c, shiny}, 'front')}</div></div>`;
+  // 圖鑑觀賞：3D 傾斜 + 鐳射膜強度（閃卡/稀有度）+ 重置傾斜
+  mc.classList.toggle('m-shiny', !!shiny);
+  mc.classList.toggle('m-t2', c.tier===2);
+  mc.classList.toggle('m-t3', c.tier===3);
+  resetModalTilt();
+  const mFront = mc.querySelector('.card-front');
+  if(mFront && !mFront.querySelector('.holo-layer')){
+    mFront.insertAdjacentHTML('beforeend','<div class="holo-layer"></div>');
+  }
   // 實景卡（tier3）→ 大圖長按觸發 3D 擴增動畫
   const mWrap = mc.querySelector('.card');
   if(c.tier===3 && mWrap){
@@ -1697,6 +1733,56 @@ function initModalSwipe(){
   });
 }
 function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+
+// ===== 圖鑑 3D 觀賞：陀螺儀/拖曳傾斜 + 鐳射膜 =====
+let modalTiltR = {rx:0, ry:0, drag:false, sx:0, sy:0};
+function setModalTilt(rx, ry){
+  modalTiltR.rx = Math.max(-14, Math.min(14, rx));
+  modalTiltR.ry = Math.max(-14, Math.min(14, ry));
+  const el = document.getElementById('modalCard');
+  if(!el) return;
+  el.style.setProperty('--rx', modalTiltR.rx + 'deg');
+  el.style.setProperty('--ry', modalTiltR.ry + 'deg');
+  el.style.setProperty('--hx', (50 + modalTiltR.ry * 2) + '%');
+  el.style.setProperty('--hy', (50 - modalTiltR.rx * 2) + '%');
+  el.style.setProperty('--px', (modalTiltR.ry * -0.8) + 'px');
+  el.style.setProperty('--py', (modalTiltR.rx * 0.8) + 'px');
+}
+function resetModalTilt(){ setModalTilt(0, 0); }
+function initModalTilt(){
+  const mc = document.getElementById('modalCard');
+  if(!mc) return;
+  // 手指/滑鼠拖曳 → 3D 傾斜（>55px 視為橫掃導航，取消傾斜）
+  mc.addEventListener('pointerdown', e=>{
+    modalTiltR.drag = true;
+    modalTiltR.sx = e.clientX; modalTiltR.sy = e.clientY;
+    try{ mc.setPointerCapture(e.pointerId); }catch(err){}
+  });
+  mc.addEventListener('pointermove', e=>{
+    if(!modalTiltR.drag) return;
+    const dx = e.clientX - modalTiltR.sx, dy = e.clientY - modalTiltR.sy;
+    if(Math.abs(dx) > 55 || Math.abs(dy) > 55){ resetModalTilt(); return; }
+    setModalTilt(-dy * 0.35, dx * 0.35);
+  });
+  const end = ()=>{ modalTiltR.drag = false; resetModalTilt(); };
+  mc.addEventListener('pointerup', end);
+  mc.addEventListener('pointercancel', end);
+  // 陀螺儀（手機傾斜）— 冇拖曳時生效
+  const onOrient = e=>{
+    if(modalTiltR.drag) return;
+    if(!document.getElementById('modal').classList.contains('show')) return;
+    const b = (e.beta == null ? 0 : e.beta - 45);
+    const g = (e.gamma == null ? 0 : e.gamma);
+    setModalTilt(b, g);
+  };
+  if(typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission){
+    DeviceOrientationEvent.requestPermission().then(s=>{
+      if(s === 'granted') window.addEventListener('deviceorientation', onOrient, true);
+    }).catch(()=>{});
+  } else if('ondeviceorientation' in window){
+    window.addEventListener('deviceorientation', onOrient, true);
+  }
+}
 
 // ===== 世代進度 / 里程碑 =====
 function genCounts(){
@@ -2462,6 +2548,7 @@ loadFilterState();
 initDexControls();
 initSwipe();
 initModalSwipe();
+initModalTilt();
 initPackSelect();
 loadMilestones();
 renderGenProgress();
