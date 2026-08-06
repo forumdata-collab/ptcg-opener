@@ -208,6 +208,10 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .fx-immersive .cf-name,.fx-immersive .cf-hp{color:#ffd700;text-shadow:0 0 8px rgba(255,215,0,.5)}
 .fx-immersive .cf-img::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(10,10,30,.7));pointer-events:none;z-index:2}
 .fx-immersive.tilt .card-inner{transform:rotateY(180deg) rotateX(6deg) rotateY(-8deg)}
+/* 長按觸發擴增動畫：金光脈衝 + 微縮放 */
+.fx-immersive.tilt .card-front{box-shadow:0 0 44px rgba(255,215,0,.6),0 14px 40px rgba(0,0,0,.6)}
+.fx-immersive.tilt .card-inner{animation:tiltGlow 1.6s ease}
+@keyframes tiltGlow{0%{filter:brightness(1)}25%{filter:brightness(1.4)}60%{filter:brightness(1.08)}100%{filter:brightness(1)}}
 /* Gold：金色金屬質感 + 邊框光澤 */
 .fx-gold .card-front{border:3px solid #ffd700 !important;background:linear-gradient(150deg,#fff8e1,#f5e6b8);box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 26px rgba(255,215,0,.65),inset 0 0 18px rgba(255,215,0,.35)}
 .fx-gold .cf-name{color:#8a6d00}
@@ -921,6 +925,7 @@ const SFX = {
   flip(){ beep(700,.08,'triangle',.08); },
   rare(){ [880,1108,1318,1760].forEach((f,i)=>beep(f,.18,'triangle',.14,i*.07)); },
   ultra(){ [523,659,784,1046,1318,1568,2093].forEach((f,i)=>beep(f,.2,'triangle',.15,i*.09)); },
+  god(){ [523,659,784,1046,1318,1568,2093,2637].forEach((f,i)=>beep(f,.24,'triangle',.16,i*.085)); [1046,1318,2093,2637].forEach((f,i)=>beep(f,.34,'sine',.1,.9+i*.14)); [880,1760].forEach((f,i)=>beep(f,.5,'triangle',.12,1.5+i*.2)); },
 };
 
 // ===== PACK SWIPE =====
@@ -1023,6 +1028,9 @@ function renderResult(replay){
   const row=document.getElementById('cardsRow');
   stage.innerHTML='';
   row.innerHTML=''; row.style.display='none';
+  // 每包開始前清走上包殘留嘅光芒/神包特效（再開一包時）
+  stage.classList.remove('glow-rainbow','glow-gold');
+  document.getElementById('godFlood').classList.remove('on');
   // 分頁指示器：5 粒點
   const dots=document.getElementById('packDots');
   dots.innerHTML='';
@@ -1055,13 +1063,14 @@ function renderResult(replay){
   // God Pack 判定
   const isGod = currentCards.every(c => c.tier>=2);
   const godFlood=document.getElementById('godFlood');
-  if(isGod){ godFlood.classList.add('on'); SFX.ultra(); }
+  if(isGod){ godFlood.classList.add('on'); SFX.god(); }
 
   // 光芒預兆：包內有高稀有（gold/crown/ultra）→ 卡堆透光
   const hasCrown = currentCards.some(c=>c.fx==='crown');
   const hasGold  = currentCards.some(c=>c.fx==='gold'||c.fx==='crown');
   const hasUltra = currentCards.some(c=>c.tier===3 || c.shiny);
-  if(hasGold){ stage.classList.add('glow-rainbow'); }
+  if(isGod){ stage.classList.add('glow-rainbow'); }       // 神包：全程連續光芒
+  else if(hasGold){ stage.classList.add('glow-rainbow'); }
   else if(hasUltra){ stage.classList.add('glow-gold'); }
 
   // 建立卡堆：5 張背面朝上疊放（順序 0 底 → 4 頂）
@@ -1071,7 +1080,8 @@ function renderResult(replay){
     d.className='scard';
     d.dataset.i=i;
     d.innerHTML = cardHTML(c,'back');
-    d.querySelector('.card-front').classList.add('fx-'+c.fx);
+    d.classList.add('fx-'+c.fx);
+    if(c.fx==='immersive') initImmersiveTilt(d);   // 實景卡：長按 3D 擴增
     stage.appendChild(d);
     // 下一幀加 in-stack（觸發進場）
     requestAnimationFrame(()=>requestAnimationFrame(()=>d.classList.add('in-stack')));
@@ -1106,7 +1116,17 @@ function renderResult(replay){
       d.style.transform='';
       d.style.zIndex = 95 - idx;   // 睇緊嗰張置頂
       // 啪聲 + 稀有度音效 + 觸覺
-      if(c.fx==='crown'){ SFX.ultra(); burstFx(d,18); vib([100,50,100,50,200]); }
+      if(isGod){
+        // 神包：翻卡過程連續光芒特效 —— 每張都粒子爆 + ✦光環
+        if(c.fx==='crown'){ SFX.ultra(); burstFx(d,18); vib([100,50,100,50,200]); }
+        else if(c.fx==='gold'){ SFX.ultra(); burstFx(d,12); vib([80,40,80]); }
+        else { SFX.rare(); burstFx(d,10); vib([40,30,60]); }
+        const front = d.querySelector('.card-front');
+        if(front && !front.querySelector('.sparkle')){
+          front.insertAdjacentHTML('beforeend','<div class="sparkle"><i>✦</i><i>✦</i><i>✦</i><i>✦</i></div>');
+        }
+      }
+      else if(c.fx==='crown'){ SFX.ultra(); burstFx(d,18); vib([100,50,100,50,200]); }
       else if(c.fx==='gold'){ SFX.ultra(); burstFx(d,12); vib([80,40,80]); }
       else if(c.fx==='holo' || c.fx==='immersive'){ SFX.rare(); vib([40,30,60]); }
       else if(c.fx==='fullart'){ SFX.flip(); vib(25); }
@@ -1166,6 +1186,30 @@ function burstFx(cardEl, n){
   }
   cardEl.appendChild(b);
   setTimeout(()=>b.remove(), 1400);
+}
+
+// 實景卡長按 → 3D 擴增動畫（長按 480ms 觸發，可循環）
+function initImmersiveTilt(el){
+  let t=null, fired=false;
+  function cancel(){
+    if(t){ clearTimeout(t); t=null; }
+    if(fired){ el.classList.remove('tilt'); fired=false; }
+  }
+  function down(e){
+    if(e.button && e.button!==0) return;
+    cancel();
+    t=setTimeout(()=>{
+      fired=true;
+      el.classList.add('tilt');
+      SFX.rare(); vib([30,20,50]);
+      setTimeout(()=>{ if(fired){ el.classList.remove('tilt'); fired=false; } }, 1600);
+    }, 480);
+  }
+  el.addEventListener('pointerdown', down);
+  el.addEventListener('pointerup', cancel);
+  el.addEventListener('pointerleave', cancel);
+  el.addEventListener('pointercancel', cancel);
+  el.addEventListener('touchmove', cancel, {passive:true});
 }
 
 const IMG_PROXY = 'https://hermesagent.de5.net:2096/ptcg-img';
@@ -1591,6 +1635,12 @@ function renderModalCard(){
   const mc = document.getElementById('modalCard');
   mc.innerHTML =
     `<div class="card"><div class="card-inner">${cardHTML({...c, shiny}, 'front')}</div></div>`;
+  // 實景卡（tier3）→ 大圖長按觸發 3D 擴增動畫
+  const mWrap = mc.querySelector('.card');
+  if(c.tier===3 && mWrap){
+    mWrap.classList.add('fx-immersive');
+    initImmersiveTilt(mWrap);
+  }
   // 放到最大：佔屏幕 88% 寬 / 92% 高，維持 5:7 卡比例
   const maxW = Math.min(window.innerWidth * 0.88, 440);
   const maxH = window.innerHeight * 0.92 - 60;
