@@ -112,6 +112,14 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .scard .card-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,0,.2,1)}
 .scard.revealed{opacity:1}
 .scard.revealed .card-inner{transform:rotateY(180deg)}
+/* 長按放大觀賞（所有卡）：scale 放大 + 置頂 + 光暈；放手縮返 */
+.scard.viewing{z-index:200;opacity:1}
+.scard.viewing .card-inner{transform:rotateY(180deg) scale(1.9) translateY(-14px)}
+.scard.viewing .card-front{box-shadow:0 0 44px rgba(255,255,255,.45),0 0 22px rgba(108,140,255,.5),0 18px 44px rgba(0,0,0,.65)}
+.scard.viewing:not(.fx-immersive) .card-front{animation:viewPulse 1.2s ease infinite}
+@keyframes viewPulse{0%{filter:brightness(1)}50%{filter:brightness(1.18)}100%{filter:brightness(1)}}
+/* 實景卡長按：3D 傾斜（原有） */
+.fx-immersive.viewing.tilt .card-inner{transform:rotateY(180deg) rotateX(6deg) rotateY(-8deg) scale(1.9)}
 /* 卡堆疊 offset — 每張卡微偏移營造疊放感 */
 .card-stage .scard.in-stack:nth-child(1){transform:translate(-2px,1px) rotate(-1.2deg)}
 .card-stage .scard.in-stack:nth-child(2){transform:translate(1px,-1px) rotate(.8deg)}
@@ -1114,7 +1122,7 @@ function renderResult(replay){
     d.dataset.i=i;
     d.innerHTML = cardHTML(c,'back');
     d.classList.add('fx-'+c.fx);
-    if(c.fx==='immersive') initImmersiveTilt(d);   // 實景卡：長按 3D 擴增
+    initCardLongPress(d, c);   // 所有卡長按放大觀賞（實景卡自動 3D 傾斜）
     stage.appendChild(d);
     // 下一幀加 in-stack（觸發進場）
     requestAnimationFrame(()=>requestAnimationFrame(()=>d.classList.add('in-stack')));
@@ -1221,29 +1229,55 @@ function burstFx(cardEl, n){
   setTimeout(()=>b.remove(), 1400);
 }
 
-// 實景卡長按 → 3D 擴增動畫（長按 480ms 觸發，可循環）
-function initImmersiveTilt(el){
+// 通用卡牌長按 → 放大觀賞（所有卡），放手縮返原位
+// 實景卡（immersive）長按 → 3D 傾斜擴增；其他卡 → scale 放大 + 光暈
+// 長按 480ms 觸發；pointerup / leave / cancel / touchmove 先縮返（唔會自動縮）
+function initCardLongPress(el, c){
   let t=null, fired=false;
+  const isImmersive = c && c.fx === 'immersive';
+  function shrink(){
+    if(fired){
+      el.classList.remove('viewing');
+      if(isImmersive) el.classList.remove('tilt');
+      fired=false;
+    }
+  }
   function cancel(){
     if(t){ clearTimeout(t); t=null; }
-    if(fired){ el.classList.remove('tilt'); fired=false; }
+    shrink();
   }
   function down(e){
     if(e.button && e.button!==0) return;
     cancel();
     t=setTimeout(()=>{
       fired=true;
-      el.classList.add('tilt');
+      t=null;
+      el.classList.add('viewing');
+      if(isImmersive) el.classList.add('tilt');
       SFX.rare(); vib([30,20,50]);
-      setTimeout(()=>{ if(fired){ el.classList.remove('tilt'); fired=false; } }, 1600);
     }, 480);
   }
-  el.addEventListener('pointerdown', down);
+  // 長按期間移動少少唔取消（幅度 < 20px 視為抖動）；超過先視為滑走
+  let sx=0, sy=0;
+  function move(e){
+    if(!t && !fired) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if(Math.abs(dx) > 20 || Math.abs(dy) > 20) cancel();
+  }
+  function start(e){
+    sx = e.clientX; sy = e.clientY;
+    down(e);
+  }
+  el.addEventListener('pointerdown', start);
   el.addEventListener('pointerup', cancel);
   el.addEventListener('pointerleave', cancel);
   el.addEventListener('pointercancel', cancel);
-  el.addEventListener('touchmove', cancel, {passive:true});
+  el.addEventListener('pointermove', move, {passive:true});
+  // 兼容 touch：touchmove 同樣用移動判斷（passive 防 scroll 阻塞）
+  el.addEventListener('touchmove', move, {passive:true});
 }
+// 向後兼容舊名
+function initImmersiveTilt(el, c){ initCardLongPress(el, c); }
 
 const IMG_PROXY = 'https://hermesagent.de5.net:2096/ptcg-img';
 function fallbackImg(el, name){
