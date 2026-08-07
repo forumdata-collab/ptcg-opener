@@ -106,19 +106,21 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 
 /* ===== 揭卡動畫 stage ===== */
 .card-stage{position:relative;width:100%;max-width:480px;height:360px;margin:0 auto 8px}
-.scard{position:absolute;left:50%;top:14px;width:158px;height:222px;margin-left:-79px;perspective:900px;opacity:0;transition:transform .6s cubic-bezier(.2,.9,.3,1.1),opacity .3s}
+.scard{position:absolute;left:50%;top:14px;width:158px;height:222px;margin-left:-79px;perspective:900px;opacity:0;transition:transform .6s cubic-bezier(.2,.9,.3,1.1),opacity .3s;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 .card-stage .scard.in-stack{opacity:1;transform:translateY(0) rotate(0) scale(1)}
 .card-stage .scard.in-stack:hover{cursor:pointer}
 .scard .card-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,0,.2,1)}
 .scard.revealed{opacity:1}
 .scard.revealed .card-inner{transform:rotateY(180deg)}
 /* 長按放大觀賞（所有卡）：clone 到 body 頂層，置於所有圖層前面 */
-.card-zoom-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;pointer-events:none;background:rgba(5,5,20,.45);opacity:0;transition:opacity .25s}
+.card-zoom-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;pointer-events:none;background:rgba(5,5,20,.45);opacity:0;transition:opacity .25s;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 .card-zoom-overlay.viewing{opacity:1}
 .card-zoom-overlay .cz-card{position:relative;width:158px;height:222px;perspective:900px;transform:scale(.4);opacity:0;transition:transform .3s cubic-bezier(.2,1.2,.3,1),opacity .25s}
 .card-zoom-overlay.viewing .cz-card{transform:scale(2.5);opacity:1}
 .card-zoom-overlay .cz-card .card-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1);transform:rotateY(180deg)}
 .card-zoom-overlay .cz-card .card-front{box-shadow:0 0 60px rgba(255,255,255,.5),0 0 30px rgba(108,140,255,.6),0 24px 60px rgba(0,0,0,.8);border-radius:10px}
+.card-zoom-overlay .cz-card .cf-img{pointer-events:none;-webkit-user-drag:none}
+.card-zoom-overlay .cz-card img{pointer-events:none;-webkit-user-drag:none}
 .card-zoom-overlay.viewing .cz-card:not(.fx-immersive) .card-front{animation:viewPulse 1.2s ease infinite}
 @keyframes viewPulse{0%{filter:brightness(1)}50%{filter:brightness(1.18)}100%{filter:brightness(1)}}
 /* 實景卡長按：3D 傾斜（原有） */
@@ -177,7 +179,7 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .cf-name{font-size:12px;font-weight:800;color:#222;line-height:1.1}
 .cf-name small{display:block;font-size:6.5px;color:#888;font-weight:600;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cf-hp{font-size:10px;font-weight:800;color:#e3350d}
-.cf-img{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,rgba(120,200,240,.28),rgba(0,0,0,.05));border-radius:8px;margin:2px 0;overflow:hidden}
+.cf-img{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,rgba(120,200,240,.28),rgba(0,0,0,.05));border-radius:8px;margin:2px 0;overflow:hidden;pointer-events:none;-webkit-user-drag:none}
 .cf-img img{max-width:100%;max-height:100%;object-fit:contain;image-rendering:auto}
 .cf-types{display:flex;gap:3px;margin-bottom:2px;min-height:13px}
 .type-tag{font-size:7.5px;padding:1px 5px;border-radius:8px;color:#fff;font-weight:700;letter-spacing:.5px}
@@ -264,7 +266,7 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .cf-name{font-size:12px;font-weight:800;color:#222;line-height:1.1}
 .cf-name small{display:block;font-size:6.5px;color:#888;font-weight:600;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cf-hp{font-size:10px;font-weight:800;color:#e3350d}
-.cf-img{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,rgba(120,200,240,.28),rgba(0,0,0,.05));border-radius:8px;margin:2px 0;overflow:hidden}
+.cf-img{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,rgba(120,200,240,.28),rgba(0,0,0,.05));border-radius:8px;margin:2px 0;overflow:hidden;pointer-events:none;-webkit-user-drag:none}
 .cf-img img{max-width:100%;max-height:100%;object-fit:contain;image-rendering:auto}
 .cf-types{display:flex;gap:3px;margin-bottom:2px;min-height:13px}
 .type-tag{font-size:7.5px;padding:1px 5px;border-radius:8px;color:#fff;font-weight:700;letter-spacing:.5px}
@@ -1293,9 +1295,25 @@ function initCardLongPress(el, c){
   el.addEventListener('pointermove', move, {passive:true});
   // 兼容 touch：touchmove 同樣用移動判斷（passive 防 scroll 阻塞）
   el.addEventListener('touchmove', move, {passive:true});
+  // 攔截手機長按圖片彈出原生菜單（Open image / Download / Search 嗰個）
+  el.addEventListener('contextmenu', e=>e.preventDefault());
+  el.addEventListener('dragstart', e=>e.preventDefault());
 }
 // 向後兼容舊名
 function initImmersiveTilt(el, c){ initCardLongPress(el, c); }
+
+// 全域守衛：按住卡牌期間（長按放大流程）攔截任何 contextmenu / 圖片原生菜單
+let _pressGuard=null;
+document.addEventListener('pointerdown', e=>{
+  const scard = e.target && e.target.closest ? e.target.closest('.scard,.modalCard,.modal-card,.card-zoom-overlay') : null;
+  if(!scard) return;
+  _pressGuard = true;
+});
+document.addEventListener('pointerup', ()=>{ _pressGuard=null; });
+document.addEventListener('pointercancel', ()=>{ _pressGuard=null; });
+document.addEventListener('contextmenu', e=>{
+  if(_pressGuard){ e.preventDefault(); }
+});
 
 const IMG_PROXY = 'https://hermesagent.de5.net:2096/ptcg-img';
 function fallbackImg(el, name){
@@ -1819,6 +1837,9 @@ function initModalTilt(){
   const end = ()=>{ modalTiltR.drag = false; resetModalTilt(); };
   mc.addEventListener('pointerup', end);
   mc.addEventListener('pointercancel', end);
+  // 攔截長按圖片原生菜單（modal 卡同樣保護）
+  mc.addEventListener('contextmenu', e=>e.preventDefault());
+  mc.addEventListener('dragstart', e=>e.preventDefault());
   // 陀螺儀（手機傾斜）— 冇拖曳時生效
   const onOrient = e=>{
     if(modalTiltR.drag) return;
