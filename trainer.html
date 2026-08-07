@@ -121,7 +121,10 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .card-zoom-overlay .cz-card .card-front{box-shadow:0 0 60px rgba(255,255,255,.5),0 0 30px rgba(108,140,255,.6),0 24px 60px rgba(0,0,0,.8);border-radius:10px}
 .card-zoom-overlay .cz-card .cf-img{pointer-events:none;-webkit-user-drag:none}
 .card-zoom-overlay .cz-card img{pointer-events:none;-webkit-user-drag:none}
-.card-zoom-overlay.viewing .cz-card:not(.fx-immersive) .card-front{animation:viewPulse 1.2s ease infinite}
+.card-zoom-overlay.viewing .cz-card.fx-holo .card-front,
+.card-zoom-overlay.viewing .cz-card.fx-fullart .card-front,
+.card-zoom-overlay.viewing .cz-card.fx-gold .card-front,
+.card-zoom-overlay.viewing .cz-card.fx-crown .card-front{animation:viewPulse 1.2s ease infinite}
 @keyframes viewPulse{0%{filter:brightness(1)}50%{filter:brightness(1.18)}100%{filter:brightness(1)}}
 /* 實景卡長按：3D 傾斜（原有） */
 .card-zoom-overlay.viewing .cz-card.fx-immersive .card-inner{transform:rotateY(180deg) rotateX(6deg) rotateY(-8deg)}
