@@ -112,14 +112,17 @@ background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d
 .scard .card-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.4,0,.2,1)}
 .scard.revealed{opacity:1}
 .scard.revealed .card-inner{transform:rotateY(180deg)}
-/* 長按放大觀賞（所有卡）：移到畫面中央 + 放大 250% + 置頂 + 光暈；放手縮回原位 */
-.scard.viewing{position:fixed;left:50%;top:50%;margin:0!important;width:158px!important;height:222px!important;transform:translate(-50%,-50%) scale(2.5)!important;z-index:999;opacity:1}
-.scard.viewing .card-inner{transform:rotateY(180deg)}
-.scard.viewing .card-front{box-shadow:0 0 44px rgba(255,255,255,.45),0 0 22px rgba(108,140,255,.5),0 18px 44px rgba(0,0,0,.65)}
-.scard.viewing:not(.fx-immersive) .card-front{animation:viewPulse 1.2s ease infinite}
+/* 長按放大觀賞（所有卡）：clone 到 body 頂層，置於所有圖層前面 */
+.card-zoom-overlay{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;pointer-events:none;background:rgba(5,5,20,.45);opacity:0;transition:opacity .25s}
+.card-zoom-overlay.viewing{opacity:1}
+.card-zoom-overlay .cz-card{position:relative;width:158px;height:222px;perspective:900px;transform:scale(.4);opacity:0;transition:transform .3s cubic-bezier(.2,1.2,.3,1),opacity .25s}
+.card-zoom-overlay.viewing .cz-card{transform:scale(2.5);opacity:1}
+.card-zoom-overlay .cz-card .card-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1);transform:rotateY(180deg)}
+.card-zoom-overlay .cz-card .card-front{box-shadow:0 0 60px rgba(255,255,255,.5),0 0 30px rgba(108,140,255,.6),0 24px 60px rgba(0,0,0,.8);border-radius:10px}
+.card-zoom-overlay.viewing .cz-card:not(.fx-immersive) .card-front{animation:viewPulse 1.2s ease infinite}
 @keyframes viewPulse{0%{filter:brightness(1)}50%{filter:brightness(1.18)}100%{filter:brightness(1)}}
 /* 實景卡長按：3D 傾斜（原有） */
-.fx-immersive.viewing.tilt .card-inner{transform:rotateY(180deg) rotateX(6deg) rotateY(-8deg)}
+.card-zoom-overlay.viewing .cz-card.fx-immersive .card-inner{transform:rotateY(180deg) rotateX(6deg) rotateY(-8deg)}
 /* 卡堆疊 offset — 每張卡微偏移營造疊放感 */
 .card-stage .scard.in-stack:nth-child(1){transform:translate(-2px,1px) rotate(-1.2deg)}
 .card-stage .scard.in-stack:nth-child(2){transform:translate(1px,-1px) rotate(.8deg)}
@@ -1232,13 +1235,29 @@ function burstFx(cardEl, n){
 // 通用卡牌長按 → 放大觀賞（所有卡），放手縮返原位
 // 實景卡（immersive）長按 → 3D 傾斜擴增；其他卡 → scale 放大 + 光暈
 // 長按 480ms 觸發；pointerup / leave / cancel / touchmove 先縮返（唔會自動縮）
+// 放大卡 clone 到 body 頂層（z-index 10000），置於所有圖層前面
 function initCardLongPress(el, c){
   let t=null, fired=false;
   const isImmersive = c && c.fx === 'immersive';
+  let ov=null;  // overlay 元素
+
+  function buildOverlay(){
+    // 複製原卡（保留 fx class 同完整 HTML），放 body 最尾 → 脫離 card-stage stacking context
+    ov = document.createElement('div');
+    ov.className = 'card-zoom-overlay';
+    ov.innerHTML = `<div class="cz-card fx-${c.fx}${isImmersive ? '' : ''}"><div class="card-inner">${el.querySelector('.card-inner').innerHTML}</div></div>`;
+    document.body.appendChild(ov);
+    // 下一幀加 viewing class 觸發 CSS 進場動畫
+    requestAnimationFrame(()=>requestAnimationFrame(()=>ov.classList.add('viewing')));
+  }
+
   function shrink(){
     if(fired){
-      el.classList.remove('viewing');
-      if(isImmersive) el.classList.remove('tilt');
+      if(ov){
+        ov.classList.remove('viewing');
+        // 等 fade 完先移除
+        setTimeout(()=>{ if(ov && ov.parentNode) ov.parentNode.removeChild(ov); ov=null; }, 300);
+      }
       fired=false;
     }
   }
@@ -1252,8 +1271,7 @@ function initCardLongPress(el, c){
     t=setTimeout(()=>{
       fired=true;
       t=null;
-      el.classList.add('viewing');
-      if(isImmersive) el.classList.add('tilt');
+      buildOverlay();
       SFX.rare(); vib([30,20,50]);
     }, 480);
   }
