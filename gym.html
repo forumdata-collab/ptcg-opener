@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="theme-color" content="#141428">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="道館對戰">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<title>道館對戰 - 寶可夢 TCG</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+background:radial-gradient(1200px 800px at 50% -10%,#2a1a4a 0%,#141428 55%,#0d0d1e 100%);color:#fff;overflow-x:hidden;min-height:100vh;touch-action:manipulation}
+.app{max-width:480px;margin:0 auto;position:relative;padding-bottom:20px}
+/* header */
+.header{display:flex;justify-content:center;align-items:center;padding:12px 14px;background:rgba(0,0,0,.35);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(255,255,255,.08)}
+.header h1{font-size:16px;font-weight:800;background:linear-gradient(90deg,#ffd700,#ff8c00);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.5px;white-space:nowrap}
+/* 底部導航 */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:200;display:flex;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(10,10,24,.92);backdrop-filter:blur(14px);border-top:1px solid rgba(255,255,255,.12);max-width:480px;margin:0 auto}
+.bn-btn{flex:1;min-height:52px;border-radius:16px;border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#ddd;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+.bn-btn.active{background:linear-gradient(135deg,#e3350d,#c41e3a);border-color:#e3350d;color:#fff;box-shadow:0 4px 16px rgba(227,53,13,.45)}
+.bn-btn.bn-back{background:rgba(255,215,0,.14);border-color:rgba(255,215,0,.4);color:#ffd700}
+.bn-btn:active{transform:scale(.96)}
+
+/* ===== 主選單 ===== */
+#menuView{padding:40px 20px;text-align:center;min-height:calc(100vh - 200px);display:flex;flex-direction:column;align-items:center;justify-content:center}
+#menuView h1{font-size:2.2rem;margin-bottom:8px;text-shadow:0 0 20px rgba(255,215,0,.5);color:#ffd700}
+.subtitle{color:#aaa;margin-bottom:28px;font-size:14px}
+.coin-display{display:inline-flex;align-items:center;gap:8px;background:rgba(255,215,0,.15);border:2px solid #ffd700;border-radius:50px;padding:8px 20px;font-size:1.1rem;margin-bottom:30px}
+.btn{display:inline-block;padding:14px 36px;margin:8px;border:none;border-radius:14px;font-size:1.05rem;font-weight:bold;cursor:pointer;transition:all .2s;font-family:inherit;text-transform:uppercase;letter-spacing:1px}
+.btn-primary{background:linear-gradient(135deg,#e94560,#c23a51);color:#fff;box-shadow:0 4px 15px rgba(233,69,96,.4)}
+.btn-primary:active{transform:translateY(-2px)}
+.btn-secondary{background:rgba(255,255,255,.1);color:#fff;border:2px solid rgba(255,255,255,.3)}
+.btn-secondary:active{background:rgba(255,255,255,.2)}
+.difficulty-select{display:flex;justify-content:center;gap:10px;margin:18px 0;flex-wrap:wrap}
+.diff-btn{padding:10px 18px;border-radius:12px;border:2px solid;background:transparent;color:#fff;cursor:pointer;font-size:.95rem;font-family:inherit;transition:all .2s}
+.diff-btn.easy{border-color:#4ade80}.diff-btn.easy:hover,.diff-btn.easy.selected{background:#4ade80;color:#000}
+.diff-btn.normal{border-color:#fbbf24}.diff-btn.normal:hover,.diff-btn.normal.selected{background:#fbbf24;color:#000}
+.diff-btn.hard{border-color:#f87171}.diff-btn.hard:hover,.diff-btn.hard.selected{background:#f87171;color:#000}
+#howToPlay{display:none;max-width:480px;margin:24px auto;text-align:left;background:rgba(255,255,255,.05);padding:18px 20px;border-radius:14px;line-height:1.9;font-size:14px}
+#howToPlay h3{color:#ffd700;margin-bottom:8px}
+
+/* ===== 對戰畫面 ===== */
+#battleView{padding:8px 10px 100px}
+.team-bar{display:flex;justify-content:center;gap:6px;padding:8px;background:rgba(0,0,0,.3);border-radius:12px;margin:8px 0}
+.team-slot{width:46px;height:46px;border-radius:8px;border:2px solid rgba(255,255,255,.2);overflow:hidden;position:relative;background:rgba(0,0,0,.4);transition:all .3s}
+.team-slot.active{border-color:#ffd700;box-shadow:0 0 10px rgba(255,215,0,.5);transform:scale(1.1)}
+.team-slot.fainted{opacity:.3;filter:grayscale(1)}
+.team-slot img{width:100%;height:100%;object-fit:contain}
+.team-slot .hp-dots{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);display:flex;gap:2px}
+.hp-dot{width:6px;height:6px;border-radius:50%;background:#ef4444}
+.hp-dot.alive{background:#22c55e}
+.battle-stage{position:relative;height:400px;background:linear-gradient(180deg,rgba(15,23,42,.8),rgba(30,41,59,.9));border-radius:16px;border:2px solid rgba(255,255,255,.1);overflow:hidden;margin:12px 0}
+.battle-stage::before{content:"";position:absolute;bottom:0;left:0;right:0;height:40%;background:linear-gradient(180deg,transparent,rgba(34,197,94,.1));pointer-events:none}
+.combatant{position:absolute;width:160px;text-align:center;transition:all .3s;z-index:5}
+.combatant.enemy-side{top:12%;right:10%}
+.combatant.player-side{bottom:12%;left:10%}
+.combatant img{width:130px;height:130px;object-fit:contain;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));transition:all .3s}
+.combatant.player-side img.flipped-back{transform:scaleX(-1)}
+.combatant img.hit{animation:flashWhite .3s ease}
+@keyframes flashWhite{0%,100%{filter:brightness(1)}50%{filter:brightness(3) saturate(0)}}
+.combatant img.knockback{animation:knockback .5s ease}
+@keyframes knockback{0%{transform:translateX(0)}30%{transform:translateX(-30px)}100%{transform:translateX(0)}}
+.combatant.player-side img.attack-lunge{animation:lungeRight .3s ease}
+.combatant.enemy-side img.attack-lunge{animation:lungeLeft .3s ease}
+@keyframes lungeRight{0%{transform:translateX(0)}50%{transform:translateX(50px) scale(1.1)}100%{transform:translateX(0)}}
+@keyframes lungeLeft{0%{transform:translateX(0)}50%{transform:translateX(-50px) scale(1.1)}100%{transform:translateX(0)}}
+.poke-info{margin-top:4px}
+.poke-name{font-size:.85rem;font-weight:bold;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
+.hearts{display:flex;justify-content:center;gap:3px;margin-top:3px}
+.heart{font-size:1.1rem;transition:all .3s}
+.heart.lost{opacity:.2;transform:scale(.5)}
+.type-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.68rem;margin:2px;font-weight:bold}
+.type-Grass{background:#78c850;color:#000}
+.type-Fire{background:#f08030;color:#000}
+.type-Water{background:#6890f0;color:#fff}
+.type-Lightning{background:#f8d030;color:#000}
+.type-Psychic{background:#f85888;color:#fff}
+.type-Fighting{background:#c03028;color:#fff}
+.type-Darkness{background:#705848;color:#fff}
+.type-Metal{background:#b8b8d0;color:#000}
+.type-Fairy{background:#ee99ac;color:#000}
+.type-Dragon{background:#7038f8;color:#fff}
+.type-Colorless{background:#a8a878;color:#000}
+.question-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.88);border:2px solid rgba(255,215,0,.5);border-radius:16px;padding:20px 28px;text-align:center;min-width:280px;z-index:10;backdrop-filter:blur(10px)}
+.question-label{font-size:.8rem;color:#ffd700;margin-bottom:6px;text-transform:uppercase;letter-spacing:2px}
+#mathQuestion{font-size:1.7rem;font-weight:bold;margin:12px 0;font-family:"Courier New",monospace;letter-spacing:2px}
+#mathAnswer{width:100%;padding:10px;font-size:1.4rem;text-align:center;border:2px solid rgba(255,255,255,.3);border-radius:10px;background:rgba(255,255,255,.1);color:#fff;outline:none;transition:border-color .2s;font-family:inherit}
+#mathAnswer:focus{border-color:#ffd700}
+#mathTimer{margin-top:10px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden}
+#timerBar{height:100%;background:linear-gradient(90deg,#22c55e,#eab308,#ef4444);width:100%;transition:width .1s linear}
+.timer-text{font-size:.8rem;color:#aaa;margin-top:5px}
+.battle-msg{position:absolute;top:40%;left:50%;transform:translate(-50%,-50%);font-size:1.15rem;font-weight:bold;padding:10px 22px;border-radius:10px;z-index:20;opacity:0;pointer-events:none;transition:opacity .3s;text-align:center;white-space:nowrap;max-width:90%}
+.battle-msg.show{opacity:1}
+.battle-msg.good{background:rgba(34,197,94,.9);color:#fff}
+.battle-msg.bad{background:rgba(239,68,68,.9);color:#fff}
+.battle-msg.info{background:rgba(59,130,246,.9);color:#fff}
+.battle-msg.crit{background:rgba(255,215,0,.95);color:#000}
+.coin-popup{position:absolute;font-size:1.4rem;font-weight:bold;color:#ffd700;text-shadow:0 0 10px rgba(255,215,0,.8);z-index:30;pointer-events:none;animation:coinFloat 1.2s ease-out forwards}
+@keyframes coinFloat{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-80px) scale(1.3)}}
+.battle-controls{display:flex;justify-content:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.revive-btn{background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;padding:12px 26px;border-radius:12px;border:none;font-size:1rem;cursor:pointer;margin:8px;font-family:inherit;transition:all .2s}
+.revive-btn:disabled{opacity:.4;cursor:not-allowed}
+/* 音量按鈕 */
+.mute-btn{position:fixed;top:60px;right:12px;z-index:150;width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(255,255,255,.25);background:rgba(0,0,0,.5);color:#fff;font-size:18px;cursor:pointer;backdrop-filter:blur(8px);font-family:inherit}
+.mute-btn.muted{opacity:.5}
+
+/* ===== 結果畫面 ===== */
+#resultView{padding:40px 20px;text-align:center;min-height:calc(100vh - 200px)}
+.result-title{font-size:2rem;margin-bottom:20px}
+.result-title.victory{color:#ffd700;text-shadow:0 0 20px rgba(255,215,0,.5)}
+.result-title.defeat{color:#ef4444}
+.result-stats{background:rgba(255,255,255,.05);border-radius:16px;padding:22px;max-width:400px;margin:20px auto}
+.stat-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+.stat-row:last-child{border-bottom:none}
+.stat-label{color:#aaa}.stat-value{font-weight:bold;color:#ffd700}
+
+.poke-entrance{animation:pokeEnter .5s ease-out}
+@keyframes pokeEnter{0%{opacity:0;transform:scale(.5) translateY(20px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+.fainted-img{filter:grayscale(1) brightness(.5)!important}
+
+@media (max-width:600px){
+  .combatant{width:120px}
+  .combatant img{width:100px;height:100px}
+  .combatant.enemy-side{right:4%;top:8%}
+  .combatant.player-side{left:4%;bottom:8%}
+  .question-panel{min-width:250px;padding:16px 20px}
+  #mathQuestion{font-size:1.4rem}
+  .team-slot{width:38px;height:38px}
+}
+</style>
+</head>
+<body>
+<header class="header"><h1>🏟️ 道館對戰</h1></header>
+<button class="mute-btn" id="muteBtn" onclick="toggleMute()">🔊</button>
+
+<div class="app">
+
+<!-- ===== 主選單 ===== -->
+<section id="menuView">
+  <h1>⚔️ 道館對戰</h1>
+  <p class="subtitle">用數學擊倒對手，贏取金幣！</p>
+  <div class="coin-display"><span>🪙</span><span id="coinCount">0</span></div>
+  <div>
+    <p style="color:#aaa;margin-bottom:10px;">選擇館主難度：</p>
+    <div class="difficulty-select">
+      <button class="diff-btn easy selected" onclick="selectDiff('easy',this)">🌱 新手館主</button>
+      <button class="diff-btn normal" onclick="selectDiff('normal',this)">⚡ 精英館主</button>
+      <button class="diff-btn hard" onclick="selectDiff('hard',this)">🔥 冠軍館主</button>
+    </div>
+  </div>
+  <button class="btn btn-primary" onclick="startBattle()">⚔️ 開始對戰</button>
+  <br>
+  <button class="btn btn-secondary" onclick="showHowToPlay()">📖 玩法說明</button>
+  <div id="howToPlay">
+    <h3>玩法說明</h3>
+    <p>• 雙方各有 5 隻寶可夢，每隻 3 HP（3 顆❤️）</p>
+    <p>• 畫面中央會出現數學題，答對即可攻擊敵人</p>
+    <p>• 答錯或超時，敵人會攻擊你</p>
+    <p>• 擊倒 1 隻敵人獲得 1 🪙，通關額外獲得 3 🪙</p>
+    <p>• 屬性有利時有機率暴擊（扣 2 HP）</p>
+    <p>• 花 1 🪙 可復活 1 隻倒下的寶可夢</p>
+  </div>
+</section>
+
+<!-- ===== 對戰 ===== -->
+<section id="battleView" style="display:none">
+  <div class="team-bar" id="enemyTeamBar"></div>
+  <div class="battle-stage" id="battleStage">
+    <div class="combatant enemy-side" id="enemyCombatant">
+      <img id="enemyImg" src="" alt="">
+      <div class="poke-info">
+        <div class="poke-name" id="enemyName"></div>
+        <div id="enemyTypes"></div>
+        <div class="hearts" id="enemyHearts"></div>
+      </div>
+    </div>
+    <div class="combatant player-side" id="playerCombatant">
+      <img id="playerImg" src="" alt="">
+      <div class="poke-info">
+        <div class="poke-name" id="playerName"></div>
+        <div id="playerTypes"></div>
+        <div class="hearts" id="playerHearts"></div>
+      </div>
+    </div>
+    <div class="question-panel" id="questionPanel">
+      <div class="question-label">⚡ 數學對戰</div>
+      <div id="mathQuestion">準備中...</div>
+      <input type="number" id="mathAnswer" placeholder="輸入答案" autocomplete="off" inputmode="numeric">
+      <div id="mathTimer"><div id="timerBar"></div></div>
+      <div class="timer-text" id="timerText">15 秒</div>
+    </div>
+    <div class="battle-msg" id="battleMsg"></div>
+  </div>
+  <div class="team-bar" id="playerTeamBar"></div>
+  <div class="battle-controls">
+    <button class="btn btn-secondary" onclick="forfeitBattle()">🏳️ 投降</button>
+    <button class="revive-btn" id="reviveBtn" onclick="revivePokemon()" style="display:none">🌀 復活 (1 🪙)</button>
+  </div>
+</section>
+
+<!-- ===== 結果 ===== -->
+<section id="resultView" style="display:none">
+  <div id="resultTitle" class="result-title"></div>
+  <div class="result-stats">
+    <div class="stat-row"><span class="stat-label">擊倒敵人</span><span class="stat-value" id="statKOs">0</span></div>
+    <div class="stat-row"><span class="stat-label">答對題數</span><span class="stat-value" id="statCorrect">0</span></div>
+    <div class="stat-row"><span class="stat-label">總嘗試</span><span class="stat-value" id="statAttempts">0</span></div>
+    <div class="stat-row"><span class="stat-label">準確率</span><span class="stat-value" id="statAccuracy">0%</span></div>
+    <div class="stat-row"><span class="stat-label">獲得金幣</span><span class="stat-value" id="statCoins">0 🪙</span></div>
+  </div>
+  <button class="btn btn-primary" onclick="backToMenu()">🔙 返回主選單</button>
+  <button class="btn btn-secondary" onclick="startBattle()">🔄 再戰一次</button>
+</section>
+
+</div>
+
+<nav class="bottom-nav">
+  <a class="bn-btn" href="index.html">抽卡</a>
+  <a class="bn-btn" href="trainer.html">訓練</a>
+  <a class="bn-btn bn-back active" href="gym.html">道館</a>
+</nav>
+
+<!-- 音效 -->
+<audio id="bgmAudio" loop preload="auto"><source src="gym-bgm.mp3" type="audio/mpeg"></audio>
+<audio id="attackAudio" preload="auto"><source src="gym-attack.mp3" type="audio/mpeg"></audio>
+
+<script>
+// ============================================================
+//  PART 1: 卡片資料（與主專案 index.html 共用 collection）
+// ============================================================
+const TEST_CARDS = [
+  {id:1, zh:"妙蛙種子", types:["Grass"], tier:0},
+  {id:4, zh:"小火龍", types:["Fire"], tier:0},
+  {id:7, zh:"傑尼龜", types:["Water"], tier:0},
+  {id:25, zh:"皮卡丘", types:["Lightning"], tier:1},
+  {id:37, zh:"六尾", types:["Fire"], tier:0},
+  {id:54, zh:"可達鴨", types:["Water"], tier:0},
+  {id:63, zh:"凱西", types:["Psychic"], tier:0},
+  {id:66, zh:"腕力", types:["Fighting"], tier:0},
+  {id:129, zh:"鯉魚王", types:["Water"], tier:0},
+  {id:133, zh:"伊布", types:["Colorless"], tier:0},
+  {id:143, zh:"卡比獸", types:["Colorless"], tier:1},
+  {id:150, zh:"超夢", types:["Psychic"], tier:3},
+  {id:25, zh:"皮卡丘", types:["Lightning"], tier:1},
+  {id:26, zh:"雷丘", types:["Lightning"], tier:1}
+];
+let CARDS = TEST_CARDS;
+
+// 從同源 index.html 讀取完整 1025 隻（beta 用；正式嵌入時直接共享 CARDS）
+(function(){
+  fetch('index.html').then(r=>r.text()).then(t=>{
+    const m = t.match(/const CARDS = (\[[\s\S]*?\]);/);
+    if(m){
+      try{ CARDS = JSON.parse(m[1]); }catch(e){}
+    }
+  }).catch(()=>{});
+})();
+
+// ============================================================
+//  PART 2: 屬性剋制（對應主專案實際屬性名）
+// ============================================================
+const TYPE_CHART = {
+  Grass:     { strong:["Water","Ground","Rock"], weak:["Fire","Fighting","Poison","Flying","Bug"] },
+  Fire:      { strong:["Grass","Metal"],         weak:["Water","Ground","Rock"] },
+  Water:     { strong:["Fire","Ground","Rock"],  weak:["Grass","Lightning"] },
+  Lightning: { strong:["Water","Flying"],        weak:["Ground"] },
+  Psychic:   { strong:["Fighting","Poison"],     weak:["Bug","Ghost","Darkness"] },
+  Fighting:  { strong:["Normal","Rock","Metal"], weak:["Flying","Psychic","Fairy"] },
+  Darkness:  { strong:["Psychic","Ghost"],       weak:["Fighting","Bug","Fairy"] },
+  Metal:     { strong:["Fairy","Ice","Rock"],    weak:["Fire","Fighting","Ground"] },
+  Fairy:     { strong:["Fighting","Dragon","Darkness"], weak:["Poison","Metal"] },
+  Dragon:    { strong:["Dragon"],                weak:["Ice","Dragon","Fairy"] },
+  Colorless: { strong:[],                        weak:["Fighting"] }
+};
+const CN_TYPE = {Grass:"草",Fire:"火",Water:"水",Lightning:"雷",Psychic:"超",Fighting:"鬥",Darkness:"惡",Metal:"鋼",Fairy:"妖",Dragon:"龍",Colorless:"無"};
+function getTypeEffectiveness(atkTypes, defTypes){
+  let m = 1;
+  for(const at of atkTypes){
+    const c = TYPE_CHART[at]; if(!c) continue;
+    for(const dt of defTypes){
+      if(c.strong.includes(dt)) m *= 1.3;
+      if(c.weak.includes(dt)) m *= 0.7;
+    }
+  }
+  return m;
+}
+const isSuperEffective = (a,d) => getTypeEffectiveness(a,d) > 1.1;
+const isNotEffective   = (a,d) => getTypeEffectiveness(a,d) < 0.9;
+
+// ============================================================
+//  PART 3: 精靈圖（PokeAPI sprites，含 fallback 鏈）
+// ============================================================
+const SPR = {
+  front:  id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
+  home:   id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${id}.png`,
+  backBw: id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/back/${id}.png`,
+  back:   id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${id}.png`
+};
+function loadEnemySprite(imgEl, id){
+  imgEl.src = SPR.front(id);
+  imgEl.onerror = () => { imgEl.src = SPR.home(id); imgEl.onerror = null; };
+}
+function loadPlayerSprite(imgEl, id){
+  const urls = [SPR.backBw(id), SPR.back(id), SPR.front(id)];
+  let i = 0;
+  (function next(){
+    if(i >= urls.length){ imgEl.classList.add('flipped-back'); return; }
+    imgEl.src = urls[i++];
+    imgEl.onload = () => imgEl.classList.remove('flipped-back');
+    imgEl.onerror = next;
+  })();
+}
+
+// ============================================================
+//  PART 4: 數學出題引擎（6 級）
+// ============================================================
+function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+const MATH_LEVELS = [
+  () => { // L1 基礎乘除
+    if(rand(0,1)){
+      const a=rand(2,9),b=rand(2,9); return {q:`${a} × ${b} = ?`, a:a*b};
+    }else{
+      const b=rand(2,9),a=b*rand(2,9); return {q:`${a} ÷ ${b} = ?`, a:a/b};
+    }
+  },
+  () => { // L2 兩位數乘個位數
+    const a=rand(10,99),b=rand(2,9); return {q:`${a} × ${b} = ?`, a:a*b};
+  },
+  () => { // L3 兩位數加減
+    if(rand(0,1)){
+      const a=rand(10,99),b=rand(10,99); return {q:`${a} + ${b} = ?`, a:a+b};
+    }else{
+      const a=rand(20,99),b=rand(10,a); return {q:`${a} − ${b} = ?`, a:a-b};
+    }
+  },
+  () => { // L4 混合運算
+    const p = rand(0,2);
+    if(p===0){ const a=rand(2,9),b=rand(2,9),c=rand(1,20); return {q:`${a} × ${b} + ${c} = ?`, a:a*b+c}; }
+    if(p===1){ const a=rand(2,9),b=rand(2,9),c=rand(1,a*b); return {q:`${a} × ${b} − ${c} = ?`, a:a*b-c}; }
+    const a=rand(10,50),b=rand(2,5); return {q:`${a} + ${a} × ${b} = ?`, a:a*(b+1)};
+  },
+  () => { // L5 分數/小數/平方
+    const p = rand(0,2);
+    if(p===0){ const a=rand(2,9),b=rand(2,9); return {q:`${a}/${b} 的小數是？（取整）`, a:Math.floor(a/b)}; }
+    if(p===1){ const a=rand(2,9); return {q:`1/${a} × ${a*a} = ?`, a:a}; }
+    const a=rand(2,9),b=rand(2,9); return {q:`${a}² + ${b} = ?`, a:a*a+b};
+  },
+  () => { // L6 括號多步
+    const p = rand(0,2);
+    if(p===0){ const a=rand(10,30),b=rand(10,30),c=rand(2,5); return {q:`(${a} + ${b}) × ${c} = ?`, a:(a+b)*c}; }
+    if(p===1){ const a=rand(5,15),b=rand(2,5),c=rand(2,5); return {q:`${a} × (${b} + ${c}) = ?`, a:a*(b+c)}; }
+    const a=rand(10,50),b=rand(2,9),c=rand(2,5); return {q:`${a} × ${b} ÷ ${c} = ?`, a:Math.floor(a*b/c)};
+  }
+];
+function generateQuestion(level){ return MATH_LEVELS[Math.max(1,Math.min(6,level))-1](); }
+
+// ============================================================
+//  PART 5: 狀態
+// ============================================================
+let gymState = {coins:0, totalWins:0, totalBattles:0};
+let battleState = null;
+let currentDifficulty = 'easy';
+let timerInterval = null;
+let actx = null;
+
+// 與主專案共用收藏（ptcg_opener_v1）
+let collection = {};
+function loadCollection(){
+  try{
+    const s = JSON.parse(localStorage.getItem('ptcg_opener_v1'));
+    if(s && s.collection) collection = s.collection;
+  }catch(e){}
+}
+function loadGymState(){
+  try{
+    const s = JSON.parse(localStorage.getItem('ptcg_gym_v1'));
+    if(s) gymState = Object.assign(gymState, s);
+  }catch(e){}
+  updateCoinDisplay();
+}
+function saveGymState(){
+  try{ localStorage.setItem('ptcg_gym_v1', JSON.stringify(gymState)); }catch(e){}
+}
+function updateCoinDisplay(){
+  const el = document.getElementById('coinCount');
+  if(el) el.textContent = gymState.coins;
+}
+
+// ============================================================
+//  PART 6: 隊伍生成
+// ============================================================
+const MAX_HP = 3, ANSWER_TIME = 15;
+const DIFFICULTY_RANGES = {
+  easy:   { enemyTierMax: 1, enemyPoolSize: 151 },
+  normal: { enemyTierMax: 2, enemyPoolSize: 649 },
+  hard:   { enemyTierMax: 3, enemyPoolSize: 1025 }
+};
+function getEnemyTeam(difficulty){
+  const r = DIFFICULTY_RANGES[difficulty];
+  const pool = CARDS.filter(c => c.id <= r.enemyPoolSize && c.tier <= r.enemyTierMax);
+  const team = [], used = new Set();
+  while(team.length < 5 && used.size < pool.length){
+    const c = pool[Math.floor(Math.random()*pool.length)];
+    if(!used.has(c.id)){ used.add(c.id); team.push(Object.assign({}, c, {currentHp:MAX_HP, maxHp:MAX_HP})); }
+  }
+  while(team.length < 5){
+    const c = CARDS[Math.floor(Math.random()*CARDS.length)];
+    if(!used.has(c.id)){ used.add(c.id); team.push(Object.assign({}, c, {currentHp:MAX_HP, maxHp:MAX_HP})); }
+  }
+  return team;
+}
+function getPlayerTeam(){
+  const caught = Object.keys(collection).map(Number).filter(n => n >= 1 && n <= 1025);
+  const starters = [1,4,7];
+  const used = new Set(caught);
+  // 補到 5 隻：先御三家，再隨機（避免重複）
+  for(const s of starters){ if(caught.length >= 5) break; if(!used.has(s)){ used.add(s); caught.push(s); } }
+  while(caught.length < 5){
+    const c = CARDS[Math.floor(Math.random()*CARDS.length)];
+    if(!used.has(c.id)){ used.add(c.id); caught.push(c.id); }
+  }
+  const pick = caught.slice(0,5);
+  return pick.map(id => {
+    const c = CARDS.find(x => x.id === id) || CARDS[0];
+    return Object.assign({}, c, {currentHp:MAX_HP, maxHp:MAX_HP});
+  });
+}
+
+// ============================================================
+//  PART 7: 音效 / 背景音樂
+// ============================================================
+const bgm = document.getElementById('bgmAudio');
+const attackSfx = document.getElementById('attackAudio');
+let bgmMuted = false;
+function toggleMute(){
+  bgmMuted = !bgmMuted;
+  const btn = document.getElementById('muteBtn');
+  if(bgmMuted){ bgm.pause(); btn.textContent = '🔇'; btn.classList.add('muted'); }
+  else { btn.textContent = '🔊'; btn.classList.remove('muted'); if(battleState) bgm.play().catch(()=>{}); }
+}
+function startBgm(){ if(!bgmMuted) bgm.play().catch(()=>{}); }
+function stopBgm(){ bgm.pause(); bgm.currentTime = 0; }
+function playAttack(){ attackSfx.currentTime = 0; attackSfx.play().catch(()=>{}); }
+
+function getAudioCtx(){
+  if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  return actx;
+}
+function sfxCorrect(){
+  const ctx = getAudioCtx();
+  [523,659,784].forEach((f,i)=>{
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(.1, ctx.currentTime + i*.08);
+    g.gain.exponentialRampToValueAtTime(.01, ctx.currentTime + i*.08 + .25);
+    o.connect(g).connect(ctx.destination);
+    o.start(ctx.currentTime + i*.08); o.stop(ctx.currentTime + i*.08 + .3);
+  });
+}
+function sfxWrong(){
+  const ctx = getAudioCtx();
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type='sawtooth'; o.frequency.setValueAtTime(200,ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(100,ctx.currentTime+.3);
+  g.gain.setValueAtTime(.08,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.01,ctx.currentTime+.3);
+  o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+.3);
+}
+function sfxKO(){
+  const ctx = getAudioCtx();
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type='square'; o.frequency.setValueAtTime(400,ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(50,ctx.currentTime+.5);
+  g.gain.setValueAtTime(.1,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.01,ctx.currentTime+.5);
+  o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+.5);
+}
+function sfxRevive(){
+  const ctx = getAudioCtx();
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(300,ctx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(600,ctx.currentTime+.3);
+  g.gain.setValueAtTime(.1,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.01,ctx.currentTime+.4);
+  o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+.4);
+}
+function sfxVictory(){
+  const ctx = getAudioCtx();
+  [523,659,784,1047].forEach((f,i)=>{
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type='sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0,ctx.currentTime+i*.15);
+    g.gain.linearRampToValueAtTime(.1,ctx.currentTime+i*.15+.05);
+    g.gain.exponentialRampToValueAtTime(.01,ctx.currentTime+i*.15+.3);
+    o.connect(g).connect(ctx.destination);
+    o.start(ctx.currentTime+i*.15); o.stop(ctx.currentTime+i*.15+.3);
+  });
+}
+function sfxDefeat(){
+  const ctx = getAudioCtx();
+  [300,250,200,150].forEach((f,i)=>{
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type='triangle'; o.frequency.value=f;
+    g.gain.setValueAtTime(.1,ctx.currentTime+i*.2);
+    g.gain.exponentialRampToValueAtTime(.01,ctx.currentTime+i*.2+.3);
+    o.connect(g).connect(ctx.destination);
+    o.start(ctx.currentTime+i*.2); o.stop(ctx.currentTime+i*.2+.3);
+  });
+}
+
+// ============================================================
+//  PART 8: 戰鬥核心
+// ============================================================
+function selectDiff(diff, btn){
+  currentDifficulty = diff;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+function showHowToPlay(){
+  const el = document.getElementById('howToPlay');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+function showView(id){
+  ['menuView','battleView','resultView'].forEach(v =>
+    document.getElementById(v).style.display = v === id ? 'block' : 'none');
+}
+function startBattle(){
+  startBgm();
+  battleState = {
+    phase:'battle', enemyTeam:getEnemyTeam(currentDifficulty), playerTeam:getPlayerTeam(),
+    enemyIndex:0, playerIndex:0, coinsEarned:0, questionsCorrect:0, questionsTotal:0,
+    currentQuestion:null, timeLeft:ANSWER_TIME, roundBusy:false
+  };
+  showView('battleView');
+  renderTeamBars();
+  renderCombatants();
+  nextQuestion();
+}
+function renderTeamBars(){
+  const eb = document.getElementById('enemyTeamBar');
+  const pb = document.getElementById('playerTeamBar');
+  eb.innerHTML = battleState.enemyTeam.map((p,i)=>`
+    <div class="team-slot ${i===battleState.enemyIndex?'active':''} ${p.currentHp<=0?'fainted':''}">
+      <img src="${SPR.front(p.id)}" alt="">
+      <div class="hp-dots">${Array(MAX_HP).fill(0).map((_,j)=>`<div class="hp-dot ${j<p.currentHp?'alive':''}"></div>`).join('')}</div>
+    </div>`).join('');
+  pb.innerHTML = battleState.playerTeam.map((p,i)=>`
+    <div class="team-slot ${i===battleState.playerIndex?'active':''} ${p.currentHp<=0?'fainted':''}">
+      <img src="${SPR.front(p.id)}" alt="">
+      <div class="hp-dots">${Array(MAX_HP).fill(0).map((_,j)=>`<div class="hp-dot ${j<p.currentHp?'alive':''}"></div>`).join('')}</div>
+    </div>`).join('');
+}
+function renderCombatants(){
+  const ePoke = battleState.enemyTeam[battleState.enemyIndex];
+  const pPoke = battleState.playerTeam[battleState.playerIndex];
+  if(!ePoke || !pPoke) return;
+  document.getElementById('enemyName').textContent = ePoke.zh;
+  document.getElementById('enemyTypes').innerHTML = ePoke.types.map(t=>`<span class="type-badge type-${t}">${CN_TYPE[t]||t}</span>`).join('');
+  renderHearts('enemyHearts', ePoke.currentHp);
+  loadEnemySprite(document.getElementById('enemyImg'), ePoke.id);
+  document.getElementById('playerName').textContent = pPoke.zh;
+  document.getElementById('playerTypes').innerHTML = pPoke.types.map(t=>`<span class="type-badge type-${t}">${CN_TYPE[t]||t}</span>`).join('');
+  renderHearts('playerHearts', pPoke.currentHp);
+  loadPlayerSprite(document.getElementById('playerImg'), pPoke.id);
+}
+function renderHearts(elId, hp){
+  document.getElementById(elId).innerHTML =
+    Array(MAX_HP).fill('❤️').map((h,i)=>`<span class="heart ${i<hp?'':'lost'}">${h}</span>`).join('');
+}
+function getMathLevelForEnemy(index){
+  const map = {0:1, 1:2, 2:3, 3:4, 4:5};
+  return map[index] || 1;
+}
+function nextQuestion(){
+  if(battleState.roundBusy) return;
+  const level = getMathLevelForEnemy(battleState.enemyIndex);
+  battleState.currentQuestion = generateQuestion(level);
+  battleState.timeLeft = ANSWER_TIME;
+  battleState.roundBusy = false;
+  document.getElementById('mathQuestion').textContent = battleState.currentQuestion.q;
+  const input = document.getElementById('mathAnswer');
+  input.value = ''; input.disabled = false; input.focus();
+  updateTimerDisplay();
+  if(timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    battleState.timeLeft -= .1;
+    updateTimerDisplay();
+    if(battleState.timeLeft <= 0){ clearInterval(timerInterval); handleTimeout(); }
+  }, 100);
+  const rb = document.getElementById('reviveBtn');
+  const hasFainted = battleState.playerTeam.some(p => p.currentHp <= 0);
+  rb.style.display = hasFainted && gymState.coins >= 1 ? 'inline-block' : 'none';
+}
+function updateTimerDisplay(){
+  const pct = Math.max(0, battleState.timeLeft / ANSWER_TIME * 100);
+  document.getElementById('timerBar').style.width = pct + '%';
+  document.getElementById('timerText').textContent = Math.ceil(battleState.timeLeft) + ' 秒';
+}
+document.getElementById('mathAnswer').addEventListener('keypress', function(e){
+  if(e.key === 'Enter') submitAnswer();
+});
+function submitAnswer(){
+  if(battleState.roundBusy) return;
+  const input = document.getElementById('mathAnswer');
+  const val = parseInt(input.value);
+  if(isNaN(val)) return;
+  clearInterval(timerInterval);
+  battleState.roundBusy = true;
+  input.disabled = true;
+  battleState.questionsTotal++;
+  const correct = val === battleState.currentQuestion.a;
+  if(correct) battleState.questionsCorrect++;
+  handleAnswer(correct);
+}
+function handleAnswer(isCorrect){
+  if(isCorrect){
+    sfxCorrect();
+    showMsg('✅ 答對了！', 'good');
+    const pPoke = battleState.playerTeam[battleState.playerIndex];
+    const ePoke = battleState.enemyTeam[battleState.enemyIndex];
+    let dmg = 1, isCrit = false;
+    if(isSuperEffective(pPoke.types, ePoke.types) && Math.random() < .3){ dmg = 2; isCrit = true; }
+    setTimeout(() => {
+      const pImg = document.getElementById('playerImg');
+      pImg.classList.add('attack-lunge');
+      setTimeout(() => pImg.classList.remove('attack-lunge'), 300);
+      setTimeout(() => {
+        playAttack();
+        ePoke.currentHp = Math.max(0, ePoke.currentHp - dmg);
+        renderHearts('enemyHearts', ePoke.currentHp);
+        const eImg = document.getElementById('enemyImg');
+        eImg.classList.add('hit');
+        if(dmg >= 2) eImg.classList.add('knockback');
+        setTimeout(() => eImg.classList.remove('hit','knockback'), 500);
+        if(isCrit) showMsg('💥 暴擊！屬性有利！', 'crit');
+        renderTeamBars();
+        if(ePoke.currentHp <= 0){
+          setTimeout(() => handleEnemyFainted(), 800);
+        }else{
+          setTimeout(() => { hideMsg(); nextQuestion(); }, 1200);
+        }
+      }, 300);
+    }, 400);
+  }else{
+    sfxWrong();
+    showMsg(`❌ 答錯了！正確答案是 ${battleState.currentQuestion.a}`, 'bad');
+    setTimeout(() => handleEnemyAttack(), 1000);
+  }
+}
+function handleTimeout(){
+  battleState.roundBusy = true;
+  document.getElementById('mathAnswer').disabled = true;
+  sfxWrong();
+  showMsg(`⏰ 時間到！正確答案是 ${battleState.currentQuestion.a}`, 'bad');
+  setTimeout(() => handleEnemyAttack(), 1000);
+}
+function handleEnemyAttack(){
+  const pPoke = battleState.playerTeam[battleState.playerIndex];
+  const ePoke = battleState.enemyTeam[battleState.enemyIndex];
+  let dmg = 1, isCrit = false;
+  if(isSuperEffective(ePoke.types, pPoke.types) && Math.random() < .3){ dmg = 2; isCrit = true; }
+  const eImg = document.getElementById('enemyImg');
+  eImg.classList.add('attack-lunge');
+  setTimeout(() => eImg.classList.remove('attack-lunge'), 300);
+  setTimeout(() => {
+    playAttack();
+    pPoke.currentHp = Math.max(0, pPoke.currentHp - dmg);
+    renderHearts('playerHearts', pPoke.currentHp);
+    const pImg = document.getElementById('playerImg');
+    pImg.classList.add('hit');
+    if(dmg >= 2) pImg.classList.add('knockback');
+    setTimeout(() => pImg.classList.remove('hit','knockback'), 500);
+    if(isCrit) showMsg('💥 敵方暴擊！屬性不利！', 'crit');
+    else showMsg('💥 受到攻擊！', 'bad');
+    renderTeamBars();
+    if(pPoke.currentHp <= 0){
+      setTimeout(() => handlePlayerFainted(), 800);
+    }else{
+      setTimeout(() => { hideMsg(); nextQuestion(); }, 1200);
+    }
+  }, 300);
+}
+function handleEnemyFainted(){
+  battleState.coinsEarned += 1;
+  showCoinPopup('+1 🪙');
+  sfxKO();
+  const eImg = document.getElementById('enemyImg');
+  eImg.classList.add('fainted-img');
+  showMsg(`🎉 ${battleState.enemyTeam[battleState.enemyIndex].zh} 倒下了！`, 'good');
+  setTimeout(() => {
+    battleState.enemyIndex++;
+    if(battleState.enemyIndex >= 5){
+      endBattle('victory');
+    }else{
+      hideMsg();
+      renderCombatants();
+      renderTeamBars();
+      nextQuestion();
+    }
+  }, 1500);
+}
+function handlePlayerFainted(){
+  const pImg = document.getElementById('playerImg');
+  pImg.classList.add('fainted-img');
+  showMsg(`😵 ${battleState.playerTeam[battleState.playerIndex].zh} 倒下了！`, 'bad');
+  setTimeout(() => {
+    let nextIdx = -1;
+    for(let i=0;i<5;i++){
+      if(battleState.playerTeam[i].currentHp > 0){ nextIdx = i; break; }
+    }
+    if(nextIdx === -1){
+      endBattle('defeat');
+    }else{
+      battleState.playerIndex = nextIdx;
+      hideMsg();
+      renderCombatants();
+      renderTeamBars();
+      nextQuestion();
+    }
+  }, 1500);
+}
+function revivePokemon(){
+  if(gymState.coins < 1) return;
+  const idx = battleState.playerTeam.findIndex(p => p.currentHp <= 0);
+  if(idx === -1) return;
+  gymState.coins -= 1;
+  saveGymState();
+  updateCoinDisplay();
+  battleState.playerTeam[idx].currentHp = MAX_HP;
+  renderTeamBars();
+  showMsg('🌀 復活成功！', 'info');
+  sfxRevive();
+  const hasFainted = battleState.playerTeam.some(p => p.currentHp <= 0);
+  document.getElementById('reviveBtn').style.display = hasFainted && gymState.coins >= 1 ? 'inline-block' : 'none';
+  setTimeout(hideMsg, 1000);
+}
+function forfeitBattle(){
+  if(!confirm('確定要投降嗎？')) return;
+  clearInterval(timerInterval);
+  endBattle('forfeit');
+}
+function endBattle(result){
+  clearInterval(timerInterval);
+  battleState.phase = 'ended';
+  stopBgm();
+  let title = '', isWin = false;
+  if(result === 'victory'){
+    title = '🏆 道館挑戰成功！';
+    isWin = true;
+    battleState.coinsEarned += 3;
+    gymState.totalWins++;
+    sfxVictory();
+  }else if(result === 'defeat'){
+    title = '💀 道館挑戰失敗...';
+    sfxDefeat();
+  }else{
+    title = '🏳️ 已投降';
+  }
+  gymState.coins += battleState.coinsEarned;
+  gymState.totalBattles++;
+  saveGymState();
+  updateCoinDisplay();
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultTitle').className = 'result-title ' + (isWin ? 'victory' : 'defeat');
+  document.getElementById('statKOs').textContent = battleState.enemyIndex;
+  document.getElementById('statCorrect').textContent = battleState.questionsCorrect;
+  document.getElementById('statAttempts').textContent = battleState.questionsTotal;
+  const acc = battleState.questionsTotal ? Math.round(battleState.questionsCorrect / battleState.questionsTotal * 100) : 0;
+  document.getElementById('statAccuracy').textContent = acc + '%';
+  document.getElementById('statCoins').textContent = battleState.coinsEarned + ' 🪙';
+  showView('resultView');
+}
+function backToMenu(){
+  showView('menuView');
+  updateCoinDisplay();
+}
+
+// ============================================================
+//  PART 9: UI 輔助
+// ============================================================
+function showMsg(text, type){
+  const el = document.getElementById('battleMsg');
+  el.textContent = text;
+  el.className = 'battle-msg show ' + type;
+}
+function hideMsg(){ document.getElementById('battleMsg').classList.remove('show'); }
+function showCoinPopup(text){
+  const stage = document.getElementById('battleStage');
+  const popup = document.createElement('div');
+  popup.className = 'coin-popup';
+  popup.textContent = text;
+  popup.style.left = '50%';
+  popup.style.top = '30%';
+  popup.style.transform = 'translateX(-50%)';
+  stage.appendChild(popup);
+  setTimeout(() => popup.remove(), 1200);
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+loadCollection();
+loadGymState();
+</script>
+</body>
+</html>
