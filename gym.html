@@ -964,9 +964,11 @@ function getAudioCtx(){
 }
 function initAudio(){
   const ctx=getAudioCtx();
-  if(ctx&&ctx.state==='suspended')ctx.resume().catch(()=>{});
   const bgm=document.getElementById('bgm');
-  if(soundOn&&bgm){const p=bgm.play();if(p)p.catch(()=>{})}
+  if(!soundOn||!bgm)return;
+  const doPlay=()=>{const p=bgm.play();if(p)p.catch(()=>{})};
+  if(ctx&&ctx.state==='suspended'){ctx.resume().then(doPlay).catch(doPlay)}
+  else{doPlay()}
 }
 function toggleSound(){
   soundOn=!soundOn;
