@@ -131,7 +131,7 @@ body{
 
 .combatant{position:absolute;width:130px;text-align:center;transition:all .3s}
 .combatant.enemy-side{top:8%;right:8%}
-.combatant.player-side{bottom:-33px;left:4%}
+.combatant.player-side{bottom:-33px;left:calc(33.333% - 97.5px)}
 .combatant img{
   width:114px;height:114px;object-fit:contain;
   filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));transition:all .3s
@@ -147,6 +147,14 @@ body{
 }
 .enemy-info{top:8px;left:10px}
 .player-info{bottom:8px;right:10px}
+
+/* 臨時定位格 (debug, ?grid=1 先顯示) */
+.debug-grid{position:absolute;inset:0;z-index:50;pointer-events:none}
+.debug-grid .cell{position:absolute;border:1px dashed rgba(255,255,255,.75)}
+.debug-grid .cell span{
+  position:absolute;top:2px;left:2px;font-size:11px;font-weight:700;color:#fff;
+  background:rgba(0,0,0,.65);padding:1px 5px;border-radius:4px
+}
 
 /* 受傷閃白 */
 .combatant img.hit{animation:flashWhite .3s ease}
@@ -306,7 +314,7 @@ body{
   .combatant img{width:102px;height:102px}
   .combatant.player-side img{width:162px;height:162px}
   .combatant.enemy-side{right:6%;top:7%}
-  .combatant.player-side{left:3%;bottom:-27px}
+  .combatant.player-side{left:calc(33.333% - 81px);bottom:-27px}
   .enemy-info,.player-info{min-width:84px;padding:4px 8px}
   #mathQuestion{font-size:24px}
   .choice-btn{padding:14px 6px;font-size:18px}
@@ -373,6 +381,7 @@ body{
       <div class="hearts" id="playerHearts"></div>
     </div>
     <div class="battle-msg" id="battleMsg"></div>
+    <div class="debug-grid" id="debugGrid" style="display:none"></div>
   </div>
   <div class="team-bar" id="playerTeamBar"></div>
   <div class="status-bar">
@@ -1071,6 +1080,20 @@ function sfxDefeat(){
 // ===== INIT =====
 loadGymState();
 applySound();
+if(location.search.includes('grid')){
+  const g=document.getElementById('debugGrid');
+  if(g){
+    g.style.display='block';
+    const N=6;
+    for(let r=0;r<N;r++)for(let c=0;c<N;c++){
+      const d=document.createElement('div');
+      d.className='cell';
+      d.style.cssText=`left:${c*100/N}%;top:${r*100/N}%;width:${100/N}%;height:${100/N}%`;
+      d.innerHTML=`<span>r${r}c${c}</span>`;
+      g.appendChild(d);
+    }
+  }
+}
 </script>
 </body>
 </html>
