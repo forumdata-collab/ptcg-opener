@@ -112,7 +112,7 @@ body{
 /* 對戰舞台 */
 .battle-stage{
   position:relative;flex:1;min-height:220px;max-height:320px;
-  background:linear-gradient(180deg,rgba(15,23,42,.6),rgba(30,41,59,.8));
+  background:url('gym-bg.jpg') center/cover no-repeat;
   border-radius:16px;border:1px solid rgba(255,255,255,.08);
   overflow:hidden;margin:4px 0
 }
@@ -662,6 +662,7 @@ function renderCombatants(){
   document.getElementById('enemyTypes').innerHTML=ePoke.types.map(t=>`<span class="type-badge type-${t}">${CN_TYPE[t]||t}</span>`).join('');
   renderHearts('enemyHearts',ePoke.currentHp);
   const eImg=document.getElementById('enemyImg');
+  eImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
   loadEnemySprite(eImg,ePoke.id);
   eImg.classList.add('poke-entrance');
   setTimeout(()=>eImg.classList.remove('poke-entrance'),500);
@@ -669,6 +670,7 @@ function renderCombatants(){
   document.getElementById('playerTypes').innerHTML=pPoke.types.map(t=>`<span class="type-badge type-${t}">${CN_TYPE[t]||t}</span>`).join('');
   renderHearts('playerHearts',pPoke.currentHp);
   const pImg=document.getElementById('playerImg');
+  pImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
   loadPlayerSprite(pImg,pPoke.id);
   pImg.classList.add('poke-entrance');
   setTimeout(()=>pImg.classList.remove('poke-entrance'),500);
@@ -990,16 +992,11 @@ function sfxWrong(){
 }
 
 function sfxHit(){
+  if(!soundOn)return;
   try{
-    const ctx=getAudioCtx();
-    const buf=ctx.createBuffer(1,ctx.sampleRate*0.08,ctx.sampleRate);
-    const d=buf.getChannelData(0);
-    for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.3;
-    const n=ctx.createBufferSource();n.buffer=buf;
-    const g=ctx.createGain();
-    g.gain.setValueAtTime(0.12,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.08);
-    n.connect(g).connect(ctx.destination);n.start();
+    const a=new Audio('gym-attack.mp3');
+    a.volume=0.9;
+    const p=a.play();if(p)p.catch(()=>{});
   }catch(e){}
 }
 
