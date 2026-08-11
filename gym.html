@@ -38,6 +38,13 @@ body{
   padding:6px 12px;border-radius:8px;background:rgba(255,255,255,.06)
 }
 .header .back-link:hover{background:rgba(255,255,255,.12)}
+.sound-btn{
+  background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);
+  border-radius:10px;color:#fff;font-size:15px;padding:5px 10px;cursor:pointer;
+  line-height:1;transition:all .2s;flex-shrink:0
+}
+.sound-btn:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3)}
+.sound-btn.muted{opacity:.55}
 
 /* ========== VIEW SYSTEM ========== */
 .view{display:none;flex:1;flex-direction:column}
@@ -302,8 +309,10 @@ body{
 <div class="header">
   <a href="index.html" class="back-link">← 返回</a>
   <h1>🏟️ 道館對戰</h1>
+  <button class="sound-btn" id="soundToggle" onclick="toggleSound()" aria-label="音樂開關">🔊</button>
   <div class="coins">🪙<span id="coinCount">0</span></div>
 </div>
+<audio id="bgm" src="gym-bgm.mp3" loop preload="auto"></audio>
 
 <!-- ========== MENU VIEW ========== -->
 <section id="menuView" class="view active">
@@ -489,7 +498,7 @@ let actx=null;
 let collection={};
 
 function loadGymState(){
-  try{const s=JSON.parse(localStorage.getItem('ptcg_gym_v2'));if(s)gymState={...gymState,...s}}catch(e){}
+  try{const s=JSON.parse(localStorage.getItem('ptcg_gym_v2'));if(s){gymState={...gymState,...s};if(typeof s.sound==='boolean')soundOn=s.sound}}catch(e){}
   updateCoinDisplay();
 }
 function saveGymState(){
@@ -920,14 +929,36 @@ function endBattle(result){
 function backToMenu(){
   showView('menuView');
   updateCoinDisplay();
+  const bgm=document.getElementById('bgm');
+  if(bgm)bgm.pause();
 }
 
-// ===== AUDIO (Web Audio API — no external files) =====
+// ===== AUDIO (BGM + Web Audio SFX) =====
+let soundOn=true;
 function getAudioCtx(){
+  if(!soundOn)return null;
   if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();
   return actx;
 }
-function initAudio(){getAudioCtx()}
+function initAudio(){
+  const ctx=getAudioCtx();
+  if(ctx&&ctx.state==='suspended')ctx.resume().catch(()=>{});
+  const bgm=document.getElementById('bgm');
+  if(soundOn&&bgm){const p=bgm.play();if(p)p.catch(()=>{})}
+}
+function toggleSound(){
+  soundOn=!soundOn;
+  gymState.sound=soundOn;
+  saveGymState();
+  applySound();
+}
+function applySound(){
+  const btn=document.getElementById('soundToggle');
+  if(btn){btn.textContent=soundOn?'🔊':'🔇';btn.classList.toggle('muted',!soundOn)}
+  const bgm=document.getElementById('bgm');
+  if(!soundOn){if(bgm)bgm.pause();return}
+  if(soundOn&&battleState&&battleState.phase==='battle'&&bgm){const p=bgm.play();if(p)p.catch(()=>{})}
+}
 
 function sfxCorrect(){
   try{
@@ -1031,6 +1062,7 @@ function sfxDefeat(){
 
 // ===== INIT =====
 loadGymState();
+applySound();
 </script>
 </body>
 </html>
