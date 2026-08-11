@@ -130,15 +130,23 @@ body{
 }
 
 .combatant{position:absolute;width:130px;text-align:center;transition:all .3s}
-.combatant.enemy-side{top:6%;right:6%}
-.combatant.player-side{bottom:6%;left:15%}
+.combatant.enemy-side{top:4%;right:4%}
+.combatant.player-side{bottom:4%;left:4%}
 .combatant img{
   width:110px;height:110px;object-fit:contain;
   filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));transition:all .3s
 }
 .combatant.player-side img{width:150px;height:150px}
-.combatant.player-side .poke-info{transform:translateX(18px)}
 .combatant.player-side img.flipped-back{transform:scaleX(-1)}
+
+/* 原生遊戲佈局：敵方資訊左上角, 我方資訊右下角 */
+.enemy-info,.player-info{
+  position:absolute;z-index:5;text-align:center;
+  background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;padding:5px 12px;min-width:96px
+}
+.enemy-info{top:8px;left:10px}
+.player-info{bottom:8px;right:10px}
 
 /* 受傷閃白 */
 .combatant img.hit{animation:flashWhite .3s ease}
@@ -154,7 +162,6 @@ body{
 @keyframes lungeRight{0%{transform:translateX(0)}50%{transform:translateX(50px) scale(1.1)}100%{transform:translateX(0)}}
 @keyframes lungeLeft{0%{transform:translateX(0)}50%{transform:translateX(-50px) scale(1.1)}100%{transform:translateX(0)}}
 
-.poke-info{margin-top:4px}
 .poke-name{font-size:13px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8)}
 .hearts{display:flex;justify-content:center;gap:3px;margin-top:3px}
 .heart{font-size:16px;transition:all .3s}
@@ -298,8 +305,9 @@ body{
   .combatant{width:110px}
   .combatant img{width:90px;height:90px}
   .combatant.player-side img{width:125px;height:125px}
-  .combatant.enemy-side{right:4%;top:6%}
-  .combatant.player-side{left:12%;bottom:5%}
+  .combatant.enemy-side{right:3%;top:4%}
+  .combatant.player-side{left:3%;bottom:4%}
+  .enemy-info,.player-info{min-width:84px;padding:4px 8px}
   #mathQuestion{font-size:24px}
   .choice-btn{padding:14px 6px;font-size:18px}
 }
@@ -347,22 +355,22 @@ body{
   <div class="team-bar" id="enemyTeamBar"></div>
   <div class="battle-stage" id="battleStage">
     <div class="arena-line"></div>
+    <div class="enemy-info">
+      <div class="poke-name" id="enemyName"></div>
+      <div class="type-badges" id="enemyTypes"></div>
+      <div class="hearts" id="enemyHearts"></div>
+    </div>
     <div class="combatant enemy-side" id="enemyCombatant">
       <img id="enemyImg" src="" alt="" loading="eager">
-      <div class="poke-info">
-        <div class="poke-name" id="enemyName"></div>
-        <div class="type-badges" id="enemyTypes"></div>
-        <div class="hearts" id="enemyHearts"></div>
-      </div>
     </div>
     <div class="type-hint" id="typeHint"></div>
     <div class="combatant player-side" id="playerCombatant">
       <img id="playerImg" src="" alt="" loading="eager">
-      <div class="poke-info">
-        <div class="poke-name" id="playerName"></div>
-        <div class="type-badges" id="playerTypes"></div>
-        <div class="hearts" id="playerHearts"></div>
-      </div>
+    </div>
+    <div class="player-info">
+      <div class="poke-name" id="playerName"></div>
+      <div class="type-badges" id="playerTypes"></div>
+      <div class="hearts" id="playerHearts"></div>
     </div>
     <div class="battle-msg" id="battleMsg"></div>
   </div>
