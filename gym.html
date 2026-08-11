@@ -966,7 +966,7 @@ function initAudio(){
   const ctx=getAudioCtx();
   const bgm=document.getElementById('bgm');
   if(!soundOn||!bgm)return;
-  const doPlay=()=>{const p=bgm.play();if(p)p.catch(()=>{})};
+  const doPlay=()=>{bgm.currentTime=0;const p=bgm.play();if(p)p.catch(()=>{})};  // 每場由頭播
   if(ctx&&ctx.state==='suspended'){ctx.resume().then(doPlay).catch(doPlay)}
   else{doPlay()}
 }
