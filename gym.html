@@ -130,12 +130,14 @@ body{
 }
 
 .combatant{position:absolute;width:130px;text-align:center;transition:all .3s}
-.combatant.enemy-side{top:8%;right:8%}
-.combatant.player-side{bottom:8%;left:8%}
+.combatant.enemy-side{top:6%;right:6%}
+.combatant.player-side{bottom:6%;left:15%}
 .combatant img{
   width:110px;height:110px;object-fit:contain;
   filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));transition:all .3s
 }
+.combatant.player-side img{width:150px;height:150px}
+.combatant.player-side .poke-info{transform:translateX(18px)}
 .combatant.player-side img.flipped-back{transform:scaleX(-1)}
 
 /* 受傷閃白 */
@@ -295,8 +297,9 @@ body{
 @media(max-width:380px){
   .combatant{width:110px}
   .combatant img{width:90px;height:90px}
+  .combatant.player-side img{width:125px;height:125px}
   .combatant.enemy-side{right:4%;top:6%}
-  .combatant.player-side{left:4%;bottom:6%}
+  .combatant.player-side{left:12%;bottom:5%}
   #mathQuestion{font-size:24px}
   .choice-btn{padding:14px 6px;font-size:18px}
 }
