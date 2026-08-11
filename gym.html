@@ -130,13 +130,13 @@ body{
 }
 
 .combatant{position:absolute;width:130px;text-align:center;transition:all .3s}
-.combatant.enemy-side{top:4%;right:4%}
-.combatant.player-side{bottom:4%;left:4%}
+.combatant.enemy-side{top:12%;right:4%}
+.combatant.player-side{bottom:1%;left:1%}
 .combatant img{
-  width:110px;height:110px;object-fit:contain;
+  width:127px;height:127px;object-fit:contain;
   filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));transition:all .3s
 }
-.combatant.player-side img{width:150px;height:150px}
+.combatant.player-side img{width:195px;height:195px}
 .combatant.player-side img.flipped-back{transform:scaleX(-1)}
 
 /* 原生遊戲佈局：敵方資訊左上角, 我方資訊右下角 */
@@ -303,10 +303,10 @@ body{
 /* 響應式 */
 @media(max-width:380px){
   .combatant{width:110px}
-  .combatant img{width:90px;height:90px}
-  .combatant.player-side img{width:125px;height:125px}
-  .combatant.enemy-side{right:3%;top:4%}
-  .combatant.player-side{left:3%;bottom:4%}
+  .combatant img{width:104px;height:104px}
+  .combatant.player-side img{width:162px;height:162px}
+  .combatant.enemy-side{right:3%;top:10%}
+  .combatant.player-side{left:1%;bottom:1%}
   .enemy-info,.player-info{min-width:84px;padding:4px 8px}
   #mathQuestion{font-size:24px}
   .choice-btn{padding:14px 6px;font-size:18px}
