@@ -217,21 +217,25 @@ body{
   100%{opacity:0;transform:var(--fx) translateY(14px) scale(.15);filter:brightness(5)}
 }
 
-/* 輪轉: 入場 (白光中現身) */
+/* 輪轉: 入場 (白光中彈出現身, overshoot) */
 .poke-entrance{animation:pokeEnter .6s ease-out}
 @keyframes pokeEnter{
   0%{opacity:0;transform:var(--fx) scale(.1) translateY(30px);filter:brightness(5)}
-  50%{opacity:1;filter:brightness(2)}
+  55%{opacity:1;filter:brightness(2.5);transform:var(--fx) scale(1.12) translateY(-6px)}
+  80%{transform:var(--fx) scale(.97)}
   100%{opacity:1;transform:var(--fx) scale(1) translateY(0);filter:brightness(1)}
 }
 
-/* 精靈球飛出/收回 (GBA 輪轉, 純 CSS 畫球) */
+/* 精靈球飛出/收回 (GBA 輪轉, 純 CSS 畫球; --bx = 拋物線水平方向) */
 .poke-ball{
   position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;
   border-radius:50%;opacity:0;pointer-events:none;z-index:7;
   background:linear-gradient(180deg,#ef4444 0%,#ef4444 46%,#333 46%,#333 54%,#fff 54%,#fff 100%);
-  border:2px solid #333;box-shadow:0 3px 8px rgba(0,0,0,.5)
+  border:2px solid #333;box-shadow:0 3px 8px rgba(0,0,0,.5);
+  --bx:0px
 }
+.enemy-side .poke-ball{--bx:70px}
+.player-side .poke-ball{--bx:-70px}
 .poke-ball::after{
   content:"";position:absolute;top:50%;left:50%;width:10px;height:10px;margin:-5px 0 0 -5px;
   border-radius:50%;background:#fff;border:2px solid #333
@@ -246,24 +250,31 @@ body{
 .poke-ball.ball-flash::before{animation:ballFlash .55s ease-out forwards}
 @keyframes ballFadeOut{0%{opacity:1}100%{opacity:0}}
 @keyframes ballFlash{0%{opacity:0;transform:scale(.2)}25%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(2.8)}}
-/* 收回: 精靈先化光縮入(.15s), 球先出現彈起然後飛走 */
+/* 收回: 精靈先化光縮入(.15s), 球先出現彈起然後飛走 (畫弧返 trainer) */
 .poke-ball.ball-catch{animation:ballCatch .4s ease-in .15s forwards}
 @keyframes ballCatch{
-  0%{opacity:1;transform:translateY(0) scale(1) rotate(0)}
-  30%{transform:translateY(-6px) scale(.9) rotate(20deg)}
-  100%{opacity:0;transform:translateY(170px) scale(.35) rotate(180deg)}
+  0%{opacity:1;transform:translate(var(--bx),0) scale(1) rotate(0)}
+  30%{transform:translate(calc(var(--bx)*.5),-8px) scale(.9) rotate(20deg)}
+  100%{opacity:0;transform:translate(var(--bx),170px) scale(.35) rotate(180deg)}
 }
-/* 飛出: 球飛上→落地彈跳→停定 (forwards 停喺精靈位) */
+/* 飛出: 球由 trainer 位畫弧飛上→落地彈跳→停定 (forwards 停喺精靈位) */
 .poke-ball.ball-throw{animation:ballThrow .55s ease-out forwards}
 @keyframes ballThrow{
-  0%{opacity:1;transform:translateY(170px) scale(.35) rotate(-160deg)}
-  35%{transform:translateY(-14px) scale(1.15) rotate(-30deg)}
-  50%{transform:translateY(0) scale(.9) rotate(0)}
-  65%{transform:translateY(-8px) scale(1.05) rotate(5deg)}
-  80%{transform:translateY(0) scale(.97)}
-  100%{opacity:1;transform:translateY(0) scale(1)}
+  0%{opacity:1;transform:translate(var(--bx),170px) scale(.35) rotate(-160deg)}
+  35%{transform:translate(calc(var(--bx)*.2),-14px) scale(1.15) rotate(-30deg)}
+  50%{transform:translate(0,0) scale(.9) rotate(0)}
+  65%{transform:translate(0,-8px) scale(1.05) rotate(5deg)}
+  80%{transform:translate(0,0) scale(.97)}
+  100%{opacity:1;transform:translate(0,0) scale(1)}
 }
 .fainted-img{filter:grayscale(1) brightness(.4) !important}
+
+/* 全屏白閃 (GBA 放精靈 signature) */
+.stage-flash{
+  position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:40
+}
+.stage-flash.on{animation:stageFlash .5s ease-out}
+@keyframes stageFlash{0%{opacity:.85}100%{opacity:0}}
 
 /* 戰鬥訊息 */
 .battle-msg{
@@ -430,6 +441,7 @@ body{
       <img id="playerImg" src="" alt="" loading="eager">
       <div class="poke-ball"></div>
     </div>
+    <div class="stage-flash" id="stageFlash"></div>
     <div class="player-info">
       <div class="poke-name" id="playerName"></div>
       <div class="type-badges" id="playerTypes"></div>
@@ -763,6 +775,11 @@ function swapCombatant(imgEl,loadFn,pokeId){
       ball.classList.remove('ball-throw');   // 球落地 → 本體 fade + 白光爆開
       ball.classList.add('ball-flash');
       imgEl.classList.add('poke-entrance');   // 精靈由白光現身
+      const sf=document.getElementById('stageFlash');
+      sf.classList.remove('on');
+      void sf.offsetWidth;                    // 強制 reflow, 令動畫重播
+      sf.classList.add('on');
+      setTimeout(()=>sf.classList.remove('on'),500);
     },550);
     setTimeout(()=>{
       imgEl.classList.remove('poke-entrance');
