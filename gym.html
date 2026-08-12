@@ -216,6 +216,32 @@ body{
 /* 輪轉: 入場 (由精靈球浮上地面) */
 .poke-entrance{animation:pokeEnter .5s ease-out}
 @keyframes pokeEnter{0%{opacity:0;transform:var(--fx) translateY(55px) scale(.5)}100%{opacity:1;transform:var(--fx) translateY(0) scale(1)}}
+
+/* 精靈球飛出/收回 (GBA 輪轉, 純 CSS 畫球) */
+.poke-ball{
+  position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;
+  border-radius:50%;opacity:0;pointer-events:none;z-index:7;
+  background:linear-gradient(180deg,#ef4444 0%,#ef4444 46%,#333 46%,#333 54%,#fff 54%,#fff 100%);
+  border:2px solid #333;box-shadow:0 3px 8px rgba(0,0,0,.5)
+}
+.poke-ball::after{
+  content:"";position:absolute;top:50%;left:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;
+  border-radius:50%;background:#fff;border:2px solid #333
+}
+.poke-ball.ball-catch{animation:ballCatch .35s ease-in forwards}
+@keyframes ballCatch{
+  0%{opacity:1;transform:translateY(0) scale(1) rotate(0)}
+  30%{transform:translateY(-6px) scale(.9) rotate(10deg)}
+  100%{opacity:0;transform:translateY(150px) scale(.3) rotate(100deg)}
+}
+.poke-ball.ball-throw{animation:ballThrow .5s ease-out}
+@keyframes ballThrow{
+  0%{opacity:0;transform:translateY(150px) scale(.3) rotate(-120deg)}
+  45%{opacity:1;transform:translateY(-10px) scale(1.1) rotate(10deg)}
+  65%{transform:translateY(2px) scale(.95) rotate(0)}
+  85%{transform:translateY(-4px) scale(1.03)}
+  100%{opacity:0;transform:translateY(0) scale(1) rotate(0)}
+}
 .fainted-img{filter:grayscale(1) brightness(.4) !important}
 
 /* 戰鬥訊息 */
@@ -376,10 +402,12 @@ body{
     </div>
     <div class="combatant enemy-side" id="enemyCombatant">
       <img id="enemyImg" src="" alt="" loading="eager">
+      <div class="poke-ball"></div>
     </div>
     <div class="type-hint" id="typeHint"></div>
     <div class="combatant player-side" id="playerCombatant">
       <img id="playerImg" src="" alt="" loading="eager">
+      <div class="poke-ball"></div>
     </div>
     <div class="player-info">
       <div class="poke-name" id="playerName"></div>
@@ -698,17 +726,20 @@ function renderCombatants(){
   swapCombatant(pImg,loadPlayerSprite,pPoke.id);
 }
 
-// 精靈輪轉: 舊精靈下沉退場 → 新精靈浮上入場 (GBA 節奏)
+// 精靈輪轉: 球收回→舊精靈下沉退場→新球飛出→精靈浮上入場 (GBA 節奏)
 function swapCombatant(imgEl,loadFn,pokeId){
   imgEl.classList.remove('poke-entrance','poke-exit');
   if(imgEl.dataset.pid===String(pokeId))return;  // 同一隻精靈, 唔使動畫
+  const ball=imgEl.parentElement.querySelector('.poke-ball');
   const enter=()=>{
     loadFn(imgEl,pokeId);imgEl.dataset.pid=pokeId;
     imgEl.classList.add('poke-entrance');
-    setTimeout(()=>imgEl.classList.remove('poke-entrance'),500);
+    ball.classList.add('ball-throw');
+    setTimeout(()=>{imgEl.classList.remove('poke-entrance');ball.classList.remove('ball-throw')},500);
   };
+  ball.classList.add('ball-catch');
   imgEl.classList.add('poke-exit');
-  setTimeout(()=>{imgEl.classList.remove('poke-exit');enter()},350);
+  setTimeout(()=>{imgEl.classList.remove('poke-exit');ball.classList.remove('ball-catch');enter()},350);
 }
 
 function renderHearts(elId,hp){
