@@ -726,9 +726,10 @@ function startBattle(){
   };
   showView('battleView');
   // 新開戰: 清空精靈 pid + src, 當首次出場 → 直接拋球釋出 (唔會行「收返舊精靈」)
+  // opacity=0 隱藏舊精靈/空白/broken icon, 直到各自白光嗰刻解除
   const eImg0=document.getElementById('enemyImg'),pImg0=document.getElementById('playerImg');
-  eImg0.dataset.pid='';eImg0.src='';
-  pImg0.dataset.pid='';pImg0.src='';
+  eImg0.dataset.pid='';eImg0.src='';eImg0.style.opacity=0;
+  pImg0.dataset.pid='';pImg0.src='';pImg0.style.opacity=0;
   renderTeamBars();
   renderCombatants();
   updateTypeHint();
