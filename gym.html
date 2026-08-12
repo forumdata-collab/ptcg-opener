@@ -134,8 +134,10 @@ body{
 .combatant.player-side{bottom:-33px;left:calc(33.333% - 122.5px)}
 .combatant img{
   width:114px;height:114px;object-fit:contain;
-  filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));transition:all .3s
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));transition:all .3s;
+  --fx:scaleX(1)
 }
+.combatant.player-side img.flipped-back{--fx:scaleX(-1)}
 .combatant.player-side img{width:195px;height:195px}
 .combatant.player-side img.flipped-back{transform:scaleX(-1)}
 
@@ -207,9 +209,13 @@ body{
 .type-hint.disadvantage{color:#f87171}
 .type-hint.neutral{color:#aaa}
 
-/* 入場動畫 */
+/* 輪轉: 退場 (GBA 收返精靈 — 下沉淡出縮細) */
+.poke-exit{animation:pokeExit .35s ease-in forwards}
+@keyframes pokeExit{0%{opacity:1;transform:var(--fx) translateY(0) scale(1)}100%{opacity:0;transform:var(--fx) translateY(30px) scale(.55)}}
+
+/* 輪轉: 入場 (由精靈球浮上地面) */
 .poke-entrance{animation:pokeEnter .5s ease-out}
-@keyframes pokeEnter{0%{opacity:0;transform:scale(.5) translateY(20px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes pokeEnter{0%{opacity:0;transform:var(--fx) translateY(55px) scale(.5)}100%{opacity:1;transform:var(--fx) translateY(0) scale(1)}}
 .fainted-img{filter:grayscale(1) brightness(.4) !important}
 
 /* 戰鬥訊息 */
@@ -683,17 +689,26 @@ function renderCombatants(){
   renderHearts('enemyHearts',ePoke.currentHp);
   const eImg=document.getElementById('enemyImg');
   eImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
-  loadEnemySprite(eImg,ePoke.id);
-  eImg.classList.add('poke-entrance');
-  setTimeout(()=>eImg.classList.remove('poke-entrance'),500);
+  swapCombatant(eImg,loadEnemySprite,ePoke.id);
   document.getElementById('playerName').textContent=pPoke.zh;
   document.getElementById('playerTypes').innerHTML=pPoke.types.map(t=>`<span class="type-badge type-${t}">${CN_TYPE[t]||t}</span>`).join('');
   renderHearts('playerHearts',pPoke.currentHp);
   const pImg=document.getElementById('playerImg');
   pImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
-  loadPlayerSprite(pImg,pPoke.id);
-  pImg.classList.add('poke-entrance');
-  setTimeout(()=>pImg.classList.remove('poke-entrance'),500);
+  swapCombatant(pImg,loadPlayerSprite,pPoke.id);
+}
+
+// 精靈輪轉: 舊精靈下沉退場 → 新精靈浮上入場 (GBA 節奏)
+function swapCombatant(imgEl,loadFn,pokeId){
+  imgEl.classList.remove('poke-entrance','poke-exit');
+  if(imgEl.dataset.pid===String(pokeId))return;  // 同一隻精靈, 唔使動畫
+  const enter=()=>{
+    loadFn(imgEl,pokeId);imgEl.dataset.pid=pokeId;
+    imgEl.classList.add('poke-entrance');
+    setTimeout(()=>imgEl.classList.remove('poke-entrance'),500);
+  };
+  imgEl.classList.add('poke-exit');
+  setTimeout(()=>{imgEl.classList.remove('poke-exit');enter()},350);
 }
 
 function renderHearts(elId,hp){
