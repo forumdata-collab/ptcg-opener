@@ -777,11 +777,15 @@ function renderCombatants(){
 function swapCombatant(imgEl,loadFn,pokeId){
   imgEl.classList.remove('poke-entrance','poke-exit');
   if(imgEl.dataset.pid===String(pokeId))return;  // 同一隻精靈, 唔使動畫
+  imgEl.style.opacity=0;  // 動畫期間隱形: 唔會見到舊精靈/空白/broken icon
   const ball=imgEl.parentElement.querySelector('.poke-ball');
   const enter=()=>{
-    loadFn(imgEl,pokeId);imgEl.dataset.pid=pokeId;
     ball.classList.add('ball-throw');
     setTimeout(()=>{
+      imgEl.dataset.pid=pokeId;    // 延遲 set: renderCombatants 嘅 pChanging 先 detect 到「玩家有動畫」
+      imgEl.style.opacity='';
+      imgEl.classList.remove('poke-exit');  // 舊精靈 fade 完(保持隱形), 而家換新
+      loadFn(imgEl,pokeId);          // 白光爆開嗰刻先換精靈, 避免球飛期間精靈已喺場
       ball.classList.remove('ball-throw');   // 球落地 → 本體 fade + 白光爆開
       ball.classList.add('ball-flash');
       imgEl.classList.add('poke-entrance');   // 精靈由白光現身
@@ -801,7 +805,8 @@ function swapCombatant(imgEl,loadFn,pokeId){
   ball.classList.add('ball-catch');
   imgEl.classList.add('poke-exit');
   // 精靈化光縮入 0.4s + 球 delay .15s 飛走 = .55s; 再停 .3s gap 先放新球, 兩次拋球唔會連埋
-  setTimeout(()=>{imgEl.classList.remove('poke-exit');ball.classList.remove('ball-catch');enter()},850);
+  // poke-exit 保留到 enter 內換精靈先移除(期間舊精靈保持 opacity 0)
+  setTimeout(()=>{ball.classList.remove('ball-catch');enter()},850);
 }
 
 function renderHearts(elId,hp){
