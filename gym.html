@@ -716,7 +716,9 @@ function showCoinPopup(text){
 
 
 // ===== BATTLE CORE =====
+let battleGen=0;  // 新開戰遞增 → 舊輪轉嘅 pending setTimeout 全部失效 (防投降/結束後 race)
 function startBattle(){
+  battleGen++;
   initAudio();
   loadCollection();
   battleState={
@@ -771,18 +773,24 @@ function renderCombatants(){
   swapCombatant(pImg,loadPlayerSprite,pPoke.id);  // 我方先出
   // 敵方等玩家完整出場(收返850+球飛550+現身600=2000ms)先開始, 兩邊動畫零重疊
   const pChanging=pImg.dataset.pid!==String(pPoke.id);  // ''(首戰/再戰)都算要動畫
-  setTimeout(()=>swapCombatant(eImg,loadEnemySprite,ePoke.id),pChanging?2000:100);
+  const gen=battleGen;
+  setTimeout(()=>{
+    if(gen!==battleGen)return;  // 已開新戰, 舊排程失效
+    swapCombatant(eImg,loadEnemySprite,ePoke.id);
+  },pChanging?2000:100);
 }
 
 // 精靈輪轉: 球收回→舊精靈化光退場→新球飛出落地彈跳→白光→精靈現身 (GBA 節奏)
 function swapCombatant(imgEl,loadFn,pokeId){
   imgEl.classList.remove('poke-entrance','poke-exit');
   if(imgEl.dataset.pid===String(pokeId))return;  // 同一隻精靈, 唔使動畫
+  const gen=battleGen;
   imgEl.style.opacity=0;  // 動畫期間隱形: 唔會見到舊精靈/空白/broken icon
   const ball=imgEl.parentElement.querySelector('.poke-ball');
   const enter=()=>{
     ball.classList.add('ball-throw');
     setTimeout(()=>{
+      if(gen!==battleGen)return;  // 已開新戰, 舊排程失效
       imgEl.dataset.pid=pokeId;    // 延遲 set: renderCombatants 嘅 pChanging 先 detect 到「玩家有動畫」
       imgEl.style.opacity='';
       imgEl.classList.remove('poke-exit');  // 舊精靈 fade 完(保持隱形), 而家換新
@@ -794,9 +802,10 @@ function swapCombatant(imgEl,loadFn,pokeId){
       sf.classList.remove('on');
       void sf.offsetWidth;                    // 強制 reflow, 令動畫重播
       sf.classList.add('on');
-      setTimeout(()=>sf.classList.remove('on'),500);
+      setTimeout(()=>{if(gen===battleGen)sf.classList.remove('on')},500);
     },550);
     setTimeout(()=>{
+      if(gen!==battleGen)return;  // 已開新戰, 舊排程失效
       imgEl.classList.remove('poke-entrance');
       ball.classList.remove('ball-throw','ball-flash');
     },1200);
@@ -807,7 +816,10 @@ function swapCombatant(imgEl,loadFn,pokeId){
   imgEl.classList.add('poke-exit');
   // 精靈化光縮入 0.4s + 球 delay .15s 飛走 = .55s; 再停 .3s gap 先放新球, 兩次拋球唔會連埋
   // poke-exit 保留到 enter 內換精靈先移除(期間舊精靈保持 opacity 0)
-  setTimeout(()=>{ball.classList.remove('ball-catch');enter()},850);
+  setTimeout(()=>{
+    if(gen!==battleGen)return;  // 已開新戰, 舊排程失效
+    ball.classList.remove('ball-catch');enter();
+  },850);
 }
 
 function renderHearts(elId,hp){
@@ -892,10 +904,12 @@ function submitChoice(value,btn){
     sfxWrong();
   }
   updateProgress();
-  setTimeout(()=>handleAnswer(correct),600);
+  const g=battleGen;
+  setTimeout(()=>{if(battleGen!==g)return;handleAnswer(correct)},600);
 }
 
 function handleAnswer(isCorrect){
+  const g=battleGen;
   if(isCorrect){
     showMsg('✅ 答對了！','good');
     const pPoke=battleState.playerTeam[battleState.playerIndex];
@@ -903,10 +917,12 @@ function handleAnswer(isCorrect){
     let dmg=1,isCrit=false;
     if(isSuperEffective(pPoke.types,ePoke.types)&&Math.random()<.3){dmg=2;isCrit=true}
     setTimeout(()=>{
+      if(battleGen!==g)return;
       const pImg=document.getElementById('playerImg');
       pImg.classList.add('attack-lunge');
       setTimeout(()=>pImg.classList.remove('attack-lunge'),300);
       setTimeout(()=>{
+        if(battleGen!==g)return;
         sfxHit();
         ePoke.currentHp=Math.max(0,ePoke.currentHp-dmg);
         renderHearts('enemyHearts',ePoke.currentHp);
@@ -916,26 +932,28 @@ function handleAnswer(isCorrect){
         setTimeout(()=>eImg.classList.remove('hit','knockback'),500);
         if(isCrit)showMsg(`💥 暴擊！屬性有利！`,'crit');
         renderTeamBars();
-        if(ePoke.currentHp<=0){setTimeout(()=>handleEnemyFainted(),800)}
-        else{setTimeout(()=>{hideMsg();nextQuestion()},1200)}
+        if(ePoke.currentHp<=0){setTimeout(()=>{if(battleGen===g)handleEnemyFainted()},800)}
+        else{setTimeout(()=>{if(battleGen!==g)return;hideMsg();nextQuestion()},1200)}
       },300);
     },400);
   }else{
     showMsg(`❌ 答錯了！`,'bad');
-    setTimeout(()=>handleEnemyAttack(),800);
+    setTimeout(()=>{if(battleGen!==g)return;handleEnemyAttack()},800);
   }
 }
 
 function handleTimeout(){
+  const g=battleGen;
   battleState.roundBusy=true;
   battleState.streak=0;
   updateProgress();
   sfxWrong();
   showMsg(`⏰ 時間到！`,'bad');
-  setTimeout(()=>handleEnemyAttack(),800);
+  setTimeout(()=>{if(battleGen!==g)return;handleEnemyAttack()},800);
 }
 
 function handleEnemyAttack(){
+  const g=battleGen;
   const pPoke=battleState.playerTeam[battleState.playerIndex];
   const ePoke=battleState.enemyTeam[battleState.enemyIndex];
   let dmg=1,isCrit=false;
@@ -944,6 +962,7 @@ function handleEnemyAttack(){
   eImg.classList.add('attack-lunge');
   setTimeout(()=>eImg.classList.remove('attack-lunge'),300);
   setTimeout(()=>{
+    if(battleGen!==g)return;
     sfxHit();
     pPoke.currentHp=Math.max(0,pPoke.currentHp-dmg);
     renderHearts('playerHearts',pPoke.currentHp);
@@ -954,12 +973,13 @@ function handleEnemyAttack(){
     if(isCrit)showMsg('💥 敵方暴擊！','crit');
     else showMsg('💥 受到攻擊！','bad');
     renderTeamBars();
-    if(pPoke.currentHp<=0){setTimeout(()=>handlePlayerFainted(),800)}
-    else{setTimeout(()=>{hideMsg();nextQuestion()},1200)}
+    if(pPoke.currentHp<=0){setTimeout(()=>{if(battleGen===g)handlePlayerFainted()},800)}
+    else{setTimeout(()=>{if(battleGen!==g)return;hideMsg();nextQuestion()},1200)}
   },300);
 }
 
 function handleEnemyFainted(){
+  const g=battleGen;
   battleState.coinsEarned+=1;
   showCoinPopup('+1 🪙');
   sfxKO();
@@ -967,6 +987,7 @@ function handleEnemyFainted(){
   eImg.classList.add('fainted-img');
   showMsg(`🎉 ${battleState.enemyTeam[battleState.enemyIndex].zh} 倒下了！`,'good');
   setTimeout(()=>{
+    if(battleGen!==g)return;  // 已投降/結束, 唔好再推進戰鬥
     battleState.enemyIndex++;
     if(battleState.enemyIndex>=5){endBattle('victory')}
     else{
@@ -981,10 +1002,12 @@ function handleEnemyFainted(){
 }
 
 function handlePlayerFainted(){
+  const g=battleGen;
   const pImg=document.getElementById('playerImg');
   pImg.classList.add('fainted-img');
   showMsg(`😵 ${battleState.playerTeam[battleState.playerIndex].zh} 倒下了！`,'bad');
   setTimeout(()=>{
+    if(battleGen!==g)return;  // 已投降/結束, 唔好再推進戰鬥
     let nextIdx=-1;
     for(let i=0;i<5;i++){if(battleState.playerTeam[i].currentHp>0){nextIdx=i;break}}
     if(nextIdx===-1){endBattle('defeat')}
@@ -1029,6 +1052,7 @@ function forfeitBattle(){
 }
 
 function endBattle(result){
+  battleGen++;  // 戰鬥結束 → 所有 pending setTimeout(輪轉/攻擊鏈/倒數)失效
   clearInterval(timerInterval);
   battleState.phase='ended';
   let title='',subtitle='',isWin=false;
