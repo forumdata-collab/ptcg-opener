@@ -656,6 +656,12 @@ function getTypeHintText(pPoke,ePoke){
 }
 
 // ===== SPRITES =====
+// 預載精靈圖 (official-artwork 大圖 + back sprite), 避免輪轉動畫期間先下載 → 現身時空白
+function preloadSprites(id){
+  [SPRITE_URLS.enemyFront(id),SPRITE_URLS.playerBack(id),
+   SPRITE_URLS.playerBackFallback(id),SPRITE_URLS.playerBackLastResort(id)]
+    .forEach(u=>{const i=new Image();i.src=u});
+}
 function loadEnemySprite(imgEl,pokemonId){
   imgEl.src=SPRITE_URLS.enemyFront(pokemonId);
   imgEl.onerror=()=>{
@@ -749,6 +755,8 @@ function renderCombatants(){
   const ePoke=battleState.enemyTeam[battleState.enemyIndex];
   const pPoke=battleState.playerTeam[battleState.playerIndex];
   if(!ePoke||!pPoke)return;
+  preloadSprites(ePoke.id);  // 動畫期間(1.4s)預先下載, 現身時即刻顯示
+  preloadSprites(pPoke.id);
   document.getElementById('enemyName').textContent=ePoke.zh;
   document.getElementById('enemyTypes').innerHTML=ePoke.types.map(t=>`<span class="type-badge type-${t}">${CN_TYPE[t]||t}</span>`).join('');
   renderHearts('enemyHearts',ePoke.currentHp);
