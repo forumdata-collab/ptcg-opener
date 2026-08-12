@@ -719,9 +719,10 @@ function startBattle(){
     currentQuestion:null,timeLeft:ANSWER_TIME,roundBusy:false,streak:0,bestStreak:0
   };
   showView('battleView');
-  // 再戰: 清空精靈 pid, 強制重新由精靈球釋出
-  document.getElementById('enemyImg').dataset.pid='';
-  document.getElementById('playerImg').dataset.pid='';
+  // 新開戰: 清空精靈 pid + src, 當首次出場 → 直接拋球釋出 (唔會行「收返舊精靈」)
+  const eImg0=document.getElementById('enemyImg'),pImg0=document.getElementById('playerImg');
+  eImg0.dataset.pid='';eImg0.src='';
+  pImg0.dataset.pid='';pImg0.src='';
   renderTeamBars();
   renderCombatants();
   updateTypeHint();
@@ -787,7 +788,8 @@ function swapCombatant(imgEl,loadFn,pokeId){
       ball.classList.remove('ball-throw','ball-flash');
     },1200);
   };
-  if(!imgEl.src){enter();return}  // 首次出場, 直接由球釋出
+  // 首次/新開戰(pid 清空): 直接由球釋出; img.src 唔可靠(空 string 會 resolve 成頁面 URL)
+  if(!imgEl.dataset.pid){enter();return}
   ball.classList.add('ball-catch');
   imgEl.classList.add('poke-exit');
   // 精靈化光縮入 0.4s + 球 delay .15s 飛走 = .55s; 再停 .3s gap 先放新球, 兩次拋球唔會連埋
