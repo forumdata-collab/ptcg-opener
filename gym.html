@@ -209,38 +209,57 @@ body{
 .type-hint.disadvantage{color:#f87171}
 .type-hint.neutral{color:#aaa}
 
-/* 輪轉: 退場 (GBA 收返精靈 — 下沉淡出縮細) */
-.poke-exit{animation:pokeExit .35s ease-in forwards}
-@keyframes pokeExit{0%{opacity:1;transform:var(--fx) translateY(0) scale(1)}100%{opacity:0;transform:var(--fx) translateY(30px) scale(.55)}}
+/* 輪轉: 退場 (精靈化光縮入球) */
+.poke-exit{animation:pokeExit .4s ease-in forwards}
+@keyframes pokeExit{
+  0%{opacity:1;transform:var(--fx) translateY(0) scale(1);filter:brightness(1)}
+  50%{filter:brightness(4) saturate(.3)}
+  100%{opacity:0;transform:var(--fx) translateY(14px) scale(.15);filter:brightness(5)}
+}
 
-/* 輪轉: 入場 (由精靈球浮上地面) */
-.poke-entrance{animation:pokeEnter .5s ease-out}
-@keyframes pokeEnter{0%{opacity:0;transform:var(--fx) translateY(55px) scale(.5)}100%{opacity:1;transform:var(--fx) translateY(0) scale(1)}}
+/* 輪轉: 入場 (白光中現身) */
+.poke-entrance{animation:pokeEnter .6s ease-out}
+@keyframes pokeEnter{
+  0%{opacity:0;transform:var(--fx) scale(.1) translateY(30px);filter:brightness(5)}
+  50%{opacity:1;filter:brightness(2)}
+  100%{opacity:1;transform:var(--fx) scale(1) translateY(0);filter:brightness(1)}
+}
 
 /* 精靈球飛出/收回 (GBA 輪轉, 純 CSS 畫球) */
 .poke-ball{
-  position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px 0 0 -15px;
+  position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;
   border-radius:50%;opacity:0;pointer-events:none;z-index:7;
   background:linear-gradient(180deg,#ef4444 0%,#ef4444 46%,#333 46%,#333 54%,#fff 54%,#fff 100%);
   border:2px solid #333;box-shadow:0 3px 8px rgba(0,0,0,.5)
 }
 .poke-ball::after{
-  content:"";position:absolute;top:50%;left:50%;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;
+  content:"";position:absolute;top:50%;left:50%;width:10px;height:10px;margin:-5px 0 0 -5px;
   border-radius:50%;background:#fff;border:2px solid #333
 }
-.poke-ball.ball-catch{animation:ballCatch .35s ease-in forwards}
+/* 白光 (出場爆開) */
+.poke-ball::before{
+  content:"";position:absolute;inset:-24px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,255,255,.5) 45%,transparent 70%);
+  opacity:0
+}
+.poke-ball.ball-flash::before{animation:ballFlash .55s ease-out forwards}
+@keyframes ballFlash{0%{opacity:0;transform:scale(.2)}25%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(2.8)}}
+/* 收回: 球由精靈位飛走 */
+.poke-ball.ball-catch{animation:ballCatch .4s ease-in forwards}
 @keyframes ballCatch{
   0%{opacity:1;transform:translateY(0) scale(1) rotate(0)}
-  30%{transform:translateY(-6px) scale(.9) rotate(10deg)}
-  100%{opacity:0;transform:translateY(150px) scale(.3) rotate(100deg)}
+  30%{transform:translateY(-6px) scale(.9) rotate(20deg)}
+  100%{opacity:0;transform:translateY(170px) scale(.35) rotate(180deg)}
 }
-.poke-ball.ball-throw{animation:ballThrow .5s ease-out}
+/* 飛出: 球飛上→落地彈跳→停定 (forwards 停喺精靈位) */
+.poke-ball.ball-throw{animation:ballThrow .55s ease-out forwards}
 @keyframes ballThrow{
-  0%{opacity:0;transform:translateY(150px) scale(.3) rotate(-120deg)}
-  45%{opacity:1;transform:translateY(-10px) scale(1.1) rotate(10deg)}
-  65%{transform:translateY(2px) scale(.95) rotate(0)}
-  85%{transform:translateY(-4px) scale(1.03)}
-  100%{opacity:0;transform:translateY(0) scale(1) rotate(0)}
+  0%{opacity:1;transform:translateY(170px) scale(.35) rotate(-160deg)}
+  35%{transform:translateY(-14px) scale(1.15) rotate(-30deg)}
+  50%{transform:translateY(0) scale(.9) rotate(0)}
+  65%{transform:translateY(-8px) scale(1.05) rotate(5deg)}
+  80%{transform:translateY(0) scale(.97)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
 }
 .fainted-img{filter:grayscale(1) brightness(.4) !important}
 
@@ -726,20 +745,26 @@ function renderCombatants(){
   swapCombatant(pImg,loadPlayerSprite,pPoke.id);
 }
 
-// 精靈輪轉: 球收回→舊精靈下沉退場→新球飛出→精靈浮上入場 (GBA 節奏)
+// 精靈輪轉: 球收回→舊精靈化光退場→新球飛出落地彈跳→白光→精靈現身 (GBA 節奏)
 function swapCombatant(imgEl,loadFn,pokeId){
   imgEl.classList.remove('poke-entrance','poke-exit');
   if(imgEl.dataset.pid===String(pokeId))return;  // 同一隻精靈, 唔使動畫
   const ball=imgEl.parentElement.querySelector('.poke-ball');
   const enter=()=>{
     loadFn(imgEl,pokeId);imgEl.dataset.pid=pokeId;
-    imgEl.classList.add('poke-entrance');
     ball.classList.add('ball-throw');
-    setTimeout(()=>{imgEl.classList.remove('poke-entrance');ball.classList.remove('ball-throw')},500);
+    setTimeout(()=>{
+      ball.classList.add('ball-flash');          // 落地後白光爆開
+      imgEl.classList.add('poke-entrance');       // 精靈由白光現身
+    },550);
+    setTimeout(()=>{
+      imgEl.classList.remove('poke-entrance');
+      ball.classList.remove('ball-throw','ball-flash');
+    },1200);
   };
   ball.classList.add('ball-catch');
   imgEl.classList.add('poke-exit');
-  setTimeout(()=>{imgEl.classList.remove('poke-exit');ball.classList.remove('ball-catch');enter()},350);
+  setTimeout(()=>{imgEl.classList.remove('poke-exit');ball.classList.remove('ball-catch');enter()},400);
 }
 
 function renderHearts(elId,hp){
