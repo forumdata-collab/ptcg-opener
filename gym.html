@@ -257,11 +257,11 @@ body{
   30%{transform:translate(calc(var(--bx)*.5),-8px) scale(.9) rotate(20deg)}
   100%{opacity:0;transform:translate(var(--bx),170px) scale(.35) rotate(180deg)}
 }
-/* 飛出: 球由 trainer 位畫弧飛上→落地彈跳→停定 (forwards 停喺精靈位) */
+/* 飛出: 球由 trainer 位畫弧飛上→落地彈跳→停定 (0% 隱形 fade 入, 同收回分開) */
 .poke-ball.ball-throw{animation:ballThrow .55s ease-out forwards}
 @keyframes ballThrow{
-  0%{opacity:1;transform:translate(var(--bx),170px) scale(.35) rotate(-160deg)}
-  35%{transform:translate(calc(var(--bx)*.2),-14px) scale(1.15) rotate(-30deg)}
+  0%{opacity:0;transform:translate(var(--bx),170px) scale(.35) rotate(-160deg)}
+  30%{opacity:1;transform:translate(calc(var(--bx)*.2),-14px) scale(1.15) rotate(-30deg)}
   50%{transform:translate(0,0) scale(.9) rotate(0)}
   65%{transform:translate(0,-8px) scale(1.05) rotate(5deg)}
   80%{transform:translate(0,0) scale(.97)}
@@ -759,8 +759,9 @@ function renderCombatants(){
   const pImg=document.getElementById('playerImg');
   pImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
   swapCombatant(pImg,loadPlayerSprite,pPoke.id);  // 我方先出
-  // 敵方延後出場, 避免兩邊動畫重疊 (GBA: 我方球先飛, 敵方跟住)
-  setTimeout(()=>swapCombatant(eImg,loadEnemySprite,ePoke.id),650);
+  // 敵方等玩家完整出場(收返850+球飛550+現身600=2000ms)先開始, 兩邊動畫零重疊
+  const pChanging=pImg.dataset.pid!==String(pPoke.id);  // ''(首戰/再戰)都算要動畫
+  setTimeout(()=>swapCombatant(eImg,loadEnemySprite,ePoke.id),pChanging?2000:100);
 }
 
 // 精靈輪轉: 球收回→舊精靈化光退場→新球飛出落地彈跳→白光→精靈現身 (GBA 節奏)
@@ -789,8 +790,8 @@ function swapCombatant(imgEl,loadFn,pokeId){
   if(!imgEl.src){enter();return}  // 首次出場, 直接由球釋出
   ball.classList.add('ball-catch');
   imgEl.classList.add('poke-exit');
-  // 精靈化光縮入 0.4s + 球 delay .15s 飛走 → 共 .55s
-  setTimeout(()=>{imgEl.classList.remove('poke-exit');ball.classList.remove('ball-catch');enter()},550);
+  // 精靈化光縮入 0.4s + 球 delay .15s 飛走 = .55s; 再停 .3s gap 先放新球, 兩次拋球唔會連埋
+  setTimeout(()=>{imgEl.classList.remove('poke-exit');ball.classList.remove('ball-catch');enter()},850);
 }
 
 function renderHearts(elId,hp){
