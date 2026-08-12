@@ -236,16 +236,18 @@ body{
   content:"";position:absolute;top:50%;left:50%;width:10px;height:10px;margin:-5px 0 0 -5px;
   border-radius:50%;background:#fff;border:2px solid #333
 }
-/* 白光 (出場爆開) */
+/* 白光 (出場爆開, 球本體 fade + ::before 白光) */
 .poke-ball::before{
   content:"";position:absolute;inset:-24px;border-radius:50%;
   background:radial-gradient(circle,rgba(255,255,255,.95),rgba(255,255,255,.5) 45%,transparent 70%);
   opacity:0
 }
+.poke-ball.ball-flash{animation:ballFadeOut .55s ease-out forwards}
 .poke-ball.ball-flash::before{animation:ballFlash .55s ease-out forwards}
+@keyframes ballFadeOut{0%{opacity:1}100%{opacity:0}}
 @keyframes ballFlash{0%{opacity:0;transform:scale(.2)}25%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(2.8)}}
-/* 收回: 球由精靈位飛走 */
-.poke-ball.ball-catch{animation:ballCatch .4s ease-in forwards}
+/* 收回: 精靈先化光縮入(.15s), 球先出現彈起然後飛走 */
+.poke-ball.ball-catch{animation:ballCatch .4s ease-in .15s forwards}
 @keyframes ballCatch{
   0%{opacity:1;transform:translateY(0) scale(1) rotate(0)}
   30%{transform:translateY(-6px) scale(.9) rotate(20deg)}
@@ -705,6 +707,9 @@ function startBattle(){
     currentQuestion:null,timeLeft:ANSWER_TIME,roundBusy:false,streak:0,bestStreak:0
   };
   showView('battleView');
+  // 再戰: 清空精靈 pid, 強制重新由精靈球釋出
+  document.getElementById('enemyImg').dataset.pid='';
+  document.getElementById('playerImg').dataset.pid='';
   renderTeamBars();
   renderCombatants();
   updateTypeHint();
@@ -736,13 +741,14 @@ function renderCombatants(){
   renderHearts('enemyHearts',ePoke.currentHp);
   const eImg=document.getElementById('enemyImg');
   eImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
-  swapCombatant(eImg,loadEnemySprite,ePoke.id);
   document.getElementById('playerName').textContent=pPoke.zh;
   document.getElementById('playerTypes').innerHTML=pPoke.types.map(t=>`<span class="type-badge type-${t}">${CN_TYPE[t]||t}</span>`).join('');
   renderHearts('playerHearts',pPoke.currentHp);
   const pImg=document.getElementById('playerImg');
   pImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
-  swapCombatant(pImg,loadPlayerSprite,pPoke.id);
+  swapCombatant(pImg,loadPlayerSprite,pPoke.id);  // 我方先出
+  // 敵方延後出場, 避免兩邊動畫重疊 (GBA: 我方球先飛, 敵方跟住)
+  setTimeout(()=>swapCombatant(eImg,loadEnemySprite,ePoke.id),650);
 }
 
 // 精靈輪轉: 球收回→舊精靈化光退場→新球飛出落地彈跳→白光→精靈現身 (GBA 節奏)
@@ -754,17 +760,20 @@ function swapCombatant(imgEl,loadFn,pokeId){
     loadFn(imgEl,pokeId);imgEl.dataset.pid=pokeId;
     ball.classList.add('ball-throw');
     setTimeout(()=>{
-      ball.classList.add('ball-flash');          // 落地後白光爆開
-      imgEl.classList.add('poke-entrance');       // 精靈由白光現身
+      ball.classList.remove('ball-throw');   // 球落地 → 本體 fade + 白光爆開
+      ball.classList.add('ball-flash');
+      imgEl.classList.add('poke-entrance');   // 精靈由白光現身
     },550);
     setTimeout(()=>{
       imgEl.classList.remove('poke-entrance');
       ball.classList.remove('ball-throw','ball-flash');
     },1200);
   };
+  if(!imgEl.src){enter();return}  // 首次出場, 直接由球釋出
   ball.classList.add('ball-catch');
   imgEl.classList.add('poke-exit');
-  setTimeout(()=>{imgEl.classList.remove('poke-exit');ball.classList.remove('ball-catch');enter()},400);
+  // 精靈化光縮入 0.4s + 球 delay .15s 飛走 → 共 .55s
+  setTimeout(()=>{imgEl.classList.remove('poke-exit');ball.classList.remove('ball-catch');enter()},550);
 }
 
 function renderHearts(elId,hp){
