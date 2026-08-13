@@ -1,5 +1,5 @@
 /* 寶可夢 TCG 抽卡機 — Service Worker 離線快取 */
-const CACHE = 'ptcg-opener-v11';
+const CACHE = 'ptcg-opener-v12';
 const IMG_CACHE = 'ptcg-imgs-v1';
 const CORE = ['./', './index.html', './manifest.json', './icon.svg'];
 
