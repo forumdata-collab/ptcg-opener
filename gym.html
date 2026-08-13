@@ -662,21 +662,23 @@ function fitQuestion(){
   if(el.scrollWidth>el.clientWidth)el.style.fontSize='18px';
 }
 
-// 機械超夢站位: 錨喺背景圖(gym-bg-mecha.jpg 640x329)像素座標「右上方深綠草地」, cover 映射到舞台, 腳踮喺草地
-const BOSS_ANCHOR={x:455,y:218};
+// 機械超夢站位: 水平對準「頂部音響開關與代幣之間的缺口」(約 80% 屏幕寬), 腳踮背景圖深綠草地
+const BOSS_H_PCT=0.80;   // 水平中心, 對準 header 音響/代幣之間
+const BOSS_ANCHOR={y:218};  // 垂直: 背景圖(gym-bg-mecha.jpg 640x329)像素 深綠草地, cover 映射
 function placeBoss(){
   if(!battleState||!battleState.boss)return;
   const stage=document.getElementById('battleStage');
   const c=document.getElementById('enemyCombatant');
   const img=document.getElementById('enemyImg');
   if(!stage||!c||!img)return;
-  const bgW=640,bgH=329;
-  const scale=Math.max(stage.clientWidth/bgW,stage.clientHeight/bgH);
-  const offX=(stage.clientWidth-bgW*scale)/2;
+  const IMG_W=110;                       // mecha boss 顯示寬 (px)
+  const bgH=329;
+  const scale=Math.max(stage.clientWidth/640,stage.clientHeight/bgH);
   const offY=(stage.clientHeight-bgH*scale)/2;
-  const ax=BOSS_ANCHOR.x*scale+offX, ay=BOSS_ANCHOR.y*scale+offY;
-  const dispH=img.naturalHeight?img.clientWidth*img.naturalHeight/img.naturalWidth:148;  // 148px 高
-  c.style.left=(ax-img.clientWidth/2)+'px';
+  const ax=stage.clientWidth*BOSS_H_PCT;     // 水平: % 對準 header, 唔靠 cover 映射
+  const ay=BOSS_ANCHOR.y*scale+offY;         // 垂直: cover 映射到草地
+  const dispH=IMG_W*322/240;                // 148 (原圖 240→322 比例)
+  c.style.left=(ax-c.clientWidth/2)+'px';   // combatant 置中於目標, 內 img 亦置中
   c.style.top=(ay-dispH)+'px';
 }
 
@@ -1117,7 +1119,6 @@ function handleAnswer(isCorrect){
     },400);
   }else{
     showMsg(`❌ 答錯了！`,'bad');
-    if(battleState.boss){setTimeout(()=>{if(battleGen!==g)endBattle('defeat')},900);return}
     setTimeout(()=>{if(battleGen!==g)return;handleEnemyAttack()},800);
   }
 }
@@ -1129,7 +1130,6 @@ function handleTimeout(){
   updateProgress();
   sfxWrong();
   showMsg(`⏰ 時間到！`,'bad');
-  if(battleState.boss){setTimeout(()=>{if(battleGen!==g)endBattle('defeat')},900);return}
   setTimeout(()=>{if(battleGen!==g)return;handleEnemyAttack()},800);
 }
 
