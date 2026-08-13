@@ -78,8 +78,9 @@ body{
 #toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%) translateY(10px);background:rgba(20,20,30,.92);border:1px solid rgba(255,255,255,.15);color:#fff;padding:10px 18px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s;z-index:999;max-width:80vw;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #battleStage.mecha{background:url('gym-bg-mecha.jpg') center/cover no-repeat}
-#battleStage.mecha .enemy-side img{width:150px}
-#battleStage.mecha .enemy-side{right:max(0px, calc(8% - 75px))}  /* 上步+150px 再向右移1.5身位(225px), max(0)防衝出畫面 */
+#battleStage.mecha .enemy-side img{width:110px;height:auto}
+#battleStage.mecha .enemy-side{top:auto;right:auto}
+#battleStage.mecha .enemy-side .poke-ball{--bx:40px}
 #battleStage.mecha .hearts{display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:2px 4px}
 #battleView.boss #enemyTeamBar{display:none}  /* Boss 戰: 敵方 6 心已喺 info box, 刪重複列慳空間 */
 
@@ -661,6 +662,24 @@ function fitQuestion(){
   if(el.scrollWidth>el.clientWidth)el.style.fontSize='18px';
 }
 
+// 機械超夢站位: 錨喺背景圖(gym-bg-mecha.jpg 640x329)像素座標「右上方深綠草地」, cover 映射到舞台, 腳踮喺草地
+const BOSS_ANCHOR={x:455,y:218};
+function placeBoss(){
+  if(!battleState||!battleState.boss)return;
+  const stage=document.getElementById('battleStage');
+  const c=document.getElementById('enemyCombatant');
+  const img=document.getElementById('enemyImg');
+  if(!stage||!c||!img)return;
+  const bgW=640,bgH=329;
+  const scale=Math.max(stage.clientWidth/bgW,stage.clientHeight/bgH);
+  const offX=(stage.clientWidth-bgW*scale)/2;
+  const offY=(stage.clientHeight-bgH*scale)/2;
+  const ax=BOSS_ANCHOR.x*scale+offX, ay=BOSS_ANCHOR.y*scale+offY;
+  const dispH=img.naturalHeight?img.clientWidth*img.naturalHeight/img.naturalWidth:148;  // 148px 高
+  c.style.left=(ax-img.clientWidth/2)+'px';
+  c.style.top=(ay-dispH)+'px';
+}
+
 function generateChoices(correctAnswer){
   const choices=new Set([correctAnswer]);
   let attempts=0;
@@ -850,7 +869,10 @@ function startBattle(){
   updateTypeHint();
   updateProgress();
   nextQuestion();
+  placeBoss();  // Boss 站位 (深綠草地), 覆蓋 CSS 預設位置
+  setTimeout(placeBoss,300);  // sprite 載入後再定一次
 }
+window.addEventListener('resize',placeBoss);
 
 function renderTeamBars(){
   const eBar=document.getElementById('enemyTeamBar');
