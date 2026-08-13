@@ -860,7 +860,7 @@ function startBattle(){
   initAudio();
   loadCollection();
   const enemyTeam=boss
-    ?[{id:-1,zh:'機械超夢',types:[],currentHp:9,maxHp:9,img:'gym-mecha-boss.png'}]
+    ?[{id:-1,zh:'機械超夢',types:[],currentHp:9,maxHp:9,img:'gym-mecha-boss-v2.png'}]
     :getEnemyTeam(currentDifficulty);
   battleState={
     phase:'battle',enemyTeam,playerTeam:getPlayerTeam(),boss,
@@ -892,7 +892,7 @@ function renderTeamBars(){
   const pBar=document.getElementById('playerTeamBar');
   if(battleState.boss){
     const b=battleState.enemyTeam[0];
-    eBar.innerHTML=`<div class="team-slot ${b.currentHp>0?'active':'fainted'}"><img src="gym-mecha-boss.png" alt=""><div class="hp-dots">${Array(6).fill(0).map((_,j)=>`<div class="hp-dot ${j<b.currentHp?'alive':''}"></div>`).join('')}</div></div>`;
+    eBar.innerHTML=`<div class="team-slot ${b.currentHp>0?'active':'fainted'}"><img src="gym-mecha-boss-v2.png" alt=""><div class="hp-dots">${Array(6).fill(0).map((_,j)=>`<div class="hp-dot ${j<b.currentHp?'alive':''}"></div>`).join('')}</div></div>`;
   }else{
   eBar.innerHTML=battleState.enemyTeam.map((p,i)=>
     `<div class="team-slot ${i===battleState.enemyIndex?'active':''} ${p.currentHp<=0?'fainted':''}">`+
@@ -927,7 +927,7 @@ function renderCombatants(){
     document.getElementById('enemyTypes').innerHTML='';
     renderHearts('enemyHearts',ePoke.currentHp,9);
     eImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
-    setTimeout(()=>{if(gen!==battleGen)return;swapCombatant(eImg,(im)=>{im.src='gym-mecha-boss.png'},-1)},100);
+    setTimeout(()=>{if(gen!==battleGen)return;swapCombatant(eImg,(im)=>{im.src='gym-mecha-boss-v2.png'},-1)},100);
   }else{
   preloadSprites(ePoke.id);  // 動畫期間(1.4s)預先下載, 現身時即刻顯示
   document.getElementById('enemyName').textContent=ePoke.zh;
