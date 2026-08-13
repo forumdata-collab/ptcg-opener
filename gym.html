@@ -69,6 +69,19 @@ body{
 .diff-btn.hard{border-color:#f87171}
 .diff-btn.hard.selected{background:#f87171;color:#000}
 
+/* ===== BOSS MODE ===== */
+.boss-section{margin-bottom:20px}
+.boss-section .boss-label{color:#c4b5fd;font-size:12px;font-weight:700;margin-bottom:8px;letter-spacing:.5px}
+.diff-btn.boss{border-color:#a78bfa;background:rgba(167,139,250,.08)}
+.diff-btn.boss.selected{background:#a78bfa;color:#000}
+.diff-btn.boss.locked{filter:grayscale(1);opacity:.5;cursor:not-allowed}
+#toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%) translateY(10px);background:rgba(20,20,30,.92);border:1px solid rgba(255,255,255,.15);color:#fff;padding:10px 18px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s;z-index:999;max-width:80vw;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#battleStage.mecha{background:url('gym-bg-mecha.jpg') center/cover no-repeat}
+#battleStage.mecha .enemy-side img{width:150px}
+#battleStage.mecha .hearts{display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:2px 4px}
+#battleView.boss #enemyTeamBar{display:none}  /* Boss 戰: 敵方 6 心已喺 info box, 刪重複列慳空間 */
+
 .start-btn{
   width:100%;max-width:280px;padding:16px;border-radius:16px;border:none;
   background:linear-gradient(135deg,#e94560,#c23a51);color:#fff;
@@ -408,6 +421,14 @@ body{
       <button class="diff-btn normal" onclick="selectDiff('normal',this)">⚡<br>精英</button>
       <button class="diff-btn hard" onclick="selectDiff('hard',this)">🔥<br>冠軍</button>
     </div>
+    <div class="boss-section">
+      <div class="boss-label">🤖 特別 Boss</div>
+      <div class="difficulty-select">
+        <button class="diff-btn boss" onclick="selectDiff('boss',this)">🤖<br>機械超夢</button>
+        <button class="diff-btn boss locked" onclick="showToast('敬請期待！內容將於後續版本開放。')">🔒<br>卡比獸</button>
+        <button class="diff-btn boss locked" onclick="showToast('敬請期待！內容將於後續版本開放。')">🔒<br>謎之精靈</button>
+      </div>
+    </div>
     <button class="start-btn" id="startBtn" onclick="startBattle()">開始對戰</button>
     <button class="howto-btn" onclick="showHowToPlay()">📖 玩法說明</button>
     <div class="howto-box" id="howToPlay">
@@ -489,6 +510,7 @@ body{
 
 </div>
 
+<div id="toast"></div>
 <script>
 // ===== DATA =====
 const TEST_CARDS=[
@@ -540,7 +562,7 @@ const SPRITE_URLS={
 
 const DIFFICULTY_RANGES={easy:{enemyTierMax:1,enemyPoolSize:50},normal:{enemyTierMax:2,enemyPoolSize:200},hard:{enemyTierMax:3,enemyPoolSize:500}};
 const MAX_HP=3;
-const ANSWER_TIME=15;
+let ANSWER_TIME=15;  // boss 戰改 20
 
 // ===== MATH ENGINE =====
 function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min}
@@ -557,6 +579,85 @@ const MATH_LEVELS=[
 function generateQuestion(level){
   const lvl=Math.max(1,Math.min(6,level));
   return MATH_LEVELS[lvl-1]();
+}
+
+// ===== BOSS QUESTIONS (小一奧數 60 題, 每場隨機抽 6) =====
+const BOSS_QUESTIONS=[
+  {q:'2,4,6,8,?,12，?是多少？',opts:[9,10,11,14],a:10},
+  {q:'1,3,5,7,?,11，?是多少？',opts:[8,9,10,12],a:9},
+  {q:'10,20,30,40,?，?是多少？',opts:[45,50,55,60],a:50},
+  {q:'5,10,15,20,?，?是多少？',opts:[22,24,25,30],a:25},
+  {q:'9,7,5,3,?，?是多少？',opts:[0,1,2,4],a:1},
+  {q:'1,2,4,8,?，?是多少？',opts:[12,14,15,16],a:16},
+  {q:'3,6,9,?,15，?是多少？',opts:[10,11,12,13],a:12},
+  {q:'1,4,7,10,?，?是多少？',opts:[12,13,14,15],a:13},
+  {q:'20,16,12,8,?，?是多少？',opts:[2,4,6,8],a:4},
+  {q:'1,1,2,3,5,?，?是多少？',opts:[6,7,8,9],a:8},
+  {q:'15隻腳與8隻腳，相差幾隻腳？',opts:[6,7,8,9],a:7},
+  {q:'18同9，相差幾多？',opts:[8,9,10,11],a:9},
+  {q:'13隻雞與6隻雞，相差幾隻？',opts:[5,6,7,8],a:7},
+  {q:'7加幾多等於12？',opts:[4,5,6,7],a:5},
+  {q:'16減幾多等於9？',opts:[6,7,8,9],a:7},
+  {q:'比10大4嘅數係幾多？',opts:[12,13,14,15],a:14},
+  {q:'比8細3嘅數係幾多？',opts:[4,5,6,7],a:5},
+  {q:'兩個6相加係幾多？',opts:[10,11,12,13],a:12},
+  {q:'4個5相加係幾多？',opts:[16,18,20,25],a:20},
+  {q:'最大嘅兩位數係幾多？',opts:[90,98,99,100],a:99},
+  {q:'3+5+7+5=?',opts:[18,19,20,21],a:20},
+  {q:'1+2+3+4+5=?',opts:[14,15,16,17],a:15},
+  {q:'9+9+9=?',opts:[26,27,28,29],a:27},
+  {q:'12+8+5=?',opts:[23,24,25,26],a:25},
+  {q:'20-5-5=?',opts:[8,9,10,12],a:10},
+  {q:'15-7-3=?',opts:[4,5,6,7],a:5},
+  {q:'6+6+6+6=?',opts:[22,24,26,28],a:24},
+  {q:'100-40-30=?',opts:[20,30,40,50],a:30},
+  {q:'8+7+2=?',opts:[15,16,17,18],a:17},
+  {q:'25-9-6=?',opts:[9,10,11,12],a:10},
+  {q:'小紅前面3人，後面4人，全隊幾人？',opts:[7,8,9,10],a:8},
+  {q:'小明排第4，佢前面有幾人？',opts:[2,3,4,5],a:3},
+  {q:'隊裏10人，小明排第7，後面有幾人？',opts:[2,3,4,5],a:3},
+  {q:'一星期有幾日？',opts:[5,6,7,8],a:7},
+  {q:'左手5隻手指，雙手共有幾隻？',opts:[8,9,10,12],a:10},
+  {q:'兩隻貓共有幾隻腳？',opts:[6,7,8,10],a:8},
+  {q:'三隻小鳥共有幾隻腳？',opts:[4,6,8,12],a:6},
+  {q:'鋸1次變2段，鋸2次變幾段？',opts:[2,3,4,5],a:3},
+  {q:'剪1刀變2張，剪3刀變幾張？',opts:[3,4,5,6],a:4},
+  {q:'鐘面一共有幾多個數字？',opts:[10,11,12,13],a:12},
+  {q:'1紅卡換2藍卡，3紅卡換幾張？',opts:[4,5,6,7],a:6},
+  {q:'1蘋果換3橙，2蘋果換幾橙？',opts:[5,6,7,8],a:6},
+  {q:'1大杯等於2細杯，4細杯係幾多大杯？',opts:[1,2,3,4],a:2},
+  {q:'1個月亮換2個星，3個月亮換幾星？',opts:[5,6,7,8],a:6},
+  {q:'1星換2圓，2星加1圓係幾圓？',opts:[4,5,6,7],a:5},
+  {q:'1隻兔有4腳，2隻兔有幾腳？',opts:[6,8,10,12],a:8},
+  {q:'1架車有4輪，3架車有幾輪？',opts:[10,11,12,14],a:12},
+  {q:'2個5蚊銀仔係幾多蚊？',opts:[8,10,12,15],a:10},
+  {q:'1張10蚊可以換幾多個2蚊？',opts:[4,5,6,10],a:5},
+  {q:'1個5蚊加3個1蚊係幾多？',opts:[6,7,8,9],a:8},
+  {q:'正方體一共有幾個面？',opts:[4,6,8,12],a:6},
+  {q:'三角形有幾多條邊？',opts:[2,3,4,5],a:3},
+  {q:'正方形有幾多條邊？',opts:[3,4,5,6],a:4},
+  {q:'長方形有幾多個角？',opts:[3,4,5,6],a:4},
+  {q:'一個正方體有幾多個角？',opts:[6,8,10,12],a:8},
+  {q:'圓形有幾多個角？',opts:[0,1,2,3],a:0},
+  {q:'骰子一共有幾多面？',opts:[4,5,6,8],a:6},
+  {q:'兩支鉛筆共有幾個筆尖？',opts:[1,2,3,4],a:2},
+  {q:'兩個盒各6面，共有幾面？',opts:[10,11,12,14],a:12},
+  {q:'3個三角形共有幾條邊？',opts:[6,8,9,10],a:9},
+];
+
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+// 題幹排版: 一行放唔落就縮字, 防小螢幕溢出 (28→22→18px)
+function fitQuestion(){
+  const el=document.getElementById('mathQuestion');
+  el.style.fontSize='';
+  if(el.scrollWidth>el.clientWidth)el.style.fontSize='22px';
+  if(el.scrollWidth>el.clientWidth)el.style.fontSize='18px';
 }
 
 function generateChoices(correctAnswer){
@@ -719,15 +820,24 @@ function showCoinPopup(text){
 let battleGen=0;  // 新開戰遞增 → 舊輪轉嘅 pending setTimeout 全部失效 (防投降/結束後 race)
 function startBattle(){
   battleGen++;
-  // 精英戰=FireRed Gym/Elite4, 冠軍戰=HGSS Champion, 新手用原 BGM
-  document.getElementById('bgm').src=currentDifficulty==='normal'?'gym-bgm-elite.mp3':currentDifficulty==='hard'?'gym-bgm-champion.mp3':'gym-bgm.mp3';
+  const boss=currentDifficulty==='boss';
+  ANSWER_TIME=boss?20:15;
+  // 精英=FireRed Gym, 冠軍=HGSS Champion, Boss=GSC Gym Leader (Kanto), 新手=原 BGM
+  document.getElementById('bgm').src=boss?'gym-bgm-mecha.mp3':currentDifficulty==='normal'?'gym-bgm-elite.mp3':currentDifficulty==='hard'?'gym-bgm-champion.mp3':'gym-bgm.mp3';
   initAudio();
   loadCollection();
+  const enemyTeam=boss
+    ?[{id:-1,zh:'機械超夢',types:[],currentHp:6,maxHp:6,img:'gym-mecha-boss.png'}]
+    :getEnemyTeam(currentDifficulty);
   battleState={
-    phase:'battle',enemyTeam:getEnemyTeam(currentDifficulty),playerTeam:getPlayerTeam(),
+    phase:'battle',enemyTeam,playerTeam:getPlayerTeam(),boss,
+    bossQuestions:boss?[...BOSS_QUESTIONS].sort(()=>Math.random()-.5).slice(0,6):null,  // 60 題隨機抽 6
     enemyIndex:0,playerIndex:0,coinsEarned:0,questionsCorrect:0,questionsTotal:0,
     currentQuestion:null,timeLeft:ANSWER_TIME,roundBusy:false,streak:0,bestStreak:0
   };
+  document.getElementById('battleStage').classList.toggle('mecha',boss);
+  document.getElementById('battleView').classList.toggle('boss',boss);
+  hideMsg();  // 清除上一場殘留嘅戰鬥訊息
   showView('battleView');
   // 新開戰: 清空精靈 pid + src, 當首次出場 → 直接拋球釋出 (唔會行「收返舊精靈」)
   // opacity=0 隱藏舊精靈/空白/broken icon, 直到各自白光嗰刻解除
@@ -744,11 +854,16 @@ function startBattle(){
 function renderTeamBars(){
   const eBar=document.getElementById('enemyTeamBar');
   const pBar=document.getElementById('playerTeamBar');
+  if(battleState.boss){
+    const b=battleState.enemyTeam[0];
+    eBar.innerHTML=`<div class="team-slot ${b.currentHp>0?'active':'fainted'}"><img src="gym-mecha-boss.png" alt=""><div class="hp-dots">${Array(6).fill(0).map((_,j)=>`<div class="hp-dot ${j<b.currentHp?'alive':''}"></div>`).join('')}</div></div>`;
+  }else{
   eBar.innerHTML=battleState.enemyTeam.map((p,i)=>
     `<div class="team-slot ${i===battleState.enemyIndex?'active':''} ${p.currentHp<=0?'fainted':''}">`+
     `<img src="${SPRITE_URLS.enemyFront(p.id)}" onerror="this.src='${SPRITE_URLS.playerBackLastResort(p.id)}'" alt="">`+
     `<div class="hp-dots">${Array(MAX_HP).fill(0).map((_,j)=>`<div class="hp-dot ${j<p.currentHp?'alive':''}"></div>`).join('')}</div></div>`
   ).join('');
+  }
   pBar.innerHTML=battleState.playerTeam.map((p,i)=>
     `<div class="team-slot ${i===battleState.playerIndex?'active':''} ${p.currentHp<=0?'fainted':''}">`+
     `<img src="${SPRITE_URLS.playerBackLastResort(p.id)}" alt="">`+
@@ -760,26 +875,36 @@ function renderCombatants(){
   const ePoke=battleState.enemyTeam[battleState.enemyIndex];
   const pPoke=battleState.playerTeam[battleState.playerIndex];
   if(!ePoke||!pPoke)return;
-  preloadSprites(ePoke.id);  // 動畫期間(1.4s)預先下載, 現身時即刻顯示
-  preloadSprites(pPoke.id);
-  document.getElementById('enemyName').textContent=ePoke.zh;
-  document.getElementById('enemyTypes').innerHTML=ePoke.types.map(t=>`<span class="type-badge type-${t}">${CN_TYPE[t]||t}</span>`).join('');
-  renderHearts('enemyHearts',ePoke.currentHp);
   const eImg=document.getElementById('enemyImg');
-  eImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
+  const gen=battleGen;
+  // 玩家渲染兩邊共用
+  preloadSprites(pPoke.id);
   document.getElementById('playerName').textContent=pPoke.zh;
   document.getElementById('playerTypes').innerHTML=pPoke.types.map(t=>`<span class="type-badge type-${t}">${CN_TYPE[t]||t}</span>`).join('');
   renderHearts('playerHearts',pPoke.currentHp);
   const pImg=document.getElementById('playerImg');
   pImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
   swapCombatant(pImg,loadPlayerSprite,pPoke.id);  // 我方先出
+  if(battleState.boss){
+    // Boss: 機械超夢 — 本地 PNG, 6 心, 唔用 PokeAPI
+    document.getElementById('enemyName').textContent=ePoke.zh;
+    document.getElementById('enemyTypes').innerHTML='<span class="type-badge type-psychic">機械</span>';
+    renderHearts('enemyHearts',ePoke.currentHp,6);
+    eImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
+    setTimeout(()=>{if(gen!==battleGen)return;swapCombatant(eImg,(im)=>{im.src='gym-mecha-boss.png'},-1)},100);
+  }else{
+  preloadSprites(ePoke.id);  // 動畫期間(1.4s)預先下載, 現身時即刻顯示
+  document.getElementById('enemyName').textContent=ePoke.zh;
+  document.getElementById('enemyTypes').innerHTML=ePoke.types.map(t=>`<span class="type-badge type-${t}">${CN_TYPE[t]||t}</span>`).join('');
+  renderHearts('enemyHearts',ePoke.currentHp);
+  eImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
   // 敵方等玩家完整出場(收返850+球飛550+現身600=2000ms)先開始, 兩邊動畫零重疊
   const pChanging=pImg.dataset.pid!==String(pPoke.id);  // ''(首戰/再戰)都算要動畫
-  const gen=battleGen;
   setTimeout(()=>{
     if(gen!==battleGen)return;  // 已開新戰, 舊排程失效
     swapCombatant(eImg,loadEnemySprite,ePoke.id);
   },pChanging?2000:100);
+  }
 }
 
 // 精靈輪轉: 球收回→舊精靈化光退場→新球飛出落地彈跳→白光→精靈現身 (GBA 節奏)
@@ -824,23 +949,26 @@ function swapCombatant(imgEl,loadFn,pokeId){
   },850);
 }
 
-function renderHearts(elId,hp){
-  document.getElementById(elId).innerHTML=Array(MAX_HP).fill('❤️').map((h,i)=>`<span class="heart ${i<hp?'':'lost'}">${h}</span>`).join('');
+function renderHearts(elId,hp,max){
+  max=max||MAX_HP;
+  document.getElementById(elId).innerHTML=Array(max).fill('❤️').map((h,i)=>`<span class="heart ${i<hp?'':'lost'}">${h}</span>`).join('');
 }
 
 function updateTypeHint(){
   const pPoke=battleState.playerTeam[battleState.playerIndex];
   const ePoke=battleState.enemyTeam[battleState.enemyIndex];
-  if(!pPoke||!ePoke)return;
-  const hint=getTypeHintText(pPoke,ePoke);
   const el=document.getElementById('typeHint');
+  if(!pPoke||!ePoke||battleState.boss){el.classList.remove('show');return}
+  const hint=getTypeHintText(pPoke,ePoke);
   el.textContent=hint.text;
   el.className='type-hint '+hint.cls;
   el.classList.add('show');
 }
 
 function updateProgress(){
-  document.getElementById('battleProgress').textContent=`第 ${battleState.enemyIndex+1}/5 隻`;
+  document.getElementById('battleProgress').textContent=battleState.boss
+    ?'🤖 機械超夢'+(battleState.streak>0?` x${battleState.streak}`:'')
+    :`第 ${battleState.enemyIndex+1}/5 隻`;
   const s=battleState.streak;
   document.getElementById('streakDisplay').textContent=s>1?`🔥 連擊 x${s}`:'';
 }
@@ -853,6 +981,15 @@ function nextQuestion(){
   battleState.roundBusy=false;
 
   const level=getMathLevelForEnemy(battleState.enemyIndex);
+  const grid=document.getElementById('choicesGrid');
+  if(battleState.boss){
+    // 小一奧數固定題庫, 順序出 (streak = 已答對數)
+    const q=battleState.bossQuestions[Math.min(battleState.streak,battleState.bossQuestions.length-1)];
+    battleState.currentQuestion=q;
+    battleState.timeLeft=ANSWER_TIME;
+    document.getElementById('mathQuestion').textContent=q.q;
+    grid.innerHTML=q.opts.map(c=>`<button class="choice-btn" data-value="${c}" onclick="submitChoice(${c},this)">${c}</button>`).join('');
+  }else{
   battleState.currentQuestion=generateQuestion(level);
   battleState.timeLeft=ANSWER_TIME;
 
@@ -860,10 +997,12 @@ function nextQuestion(){
 
   // Generate 4 choices
   const choices=generateChoices(battleState.currentQuestion.a);
-  const grid=document.getElementById('choicesGrid');
   grid.innerHTML=choices.map(c=>
     `<button class="choice-btn" data-value="${c}" onclick="submitChoice(${c},this)">${c}</button>`
   ).join('');
+  }
+
+  fitQuestion();  // 題幹一行放唔落就自動縮字
 
   updateTimerDisplay();
   if(timerInterval)clearInterval(timerInterval);
@@ -914,6 +1053,22 @@ function handleAnswer(isCorrect){
   const g=battleGen;
   if(isCorrect){
     showMsg('✅ 答對了！','good');
+    if(battleState.boss){
+      // Boss: 每答對 1 題扣 1 血, 無暴擊/屬性 (6 連對即勝)
+      setTimeout(()=>{
+        if(battleGen!==g)return;
+        sfxHit();
+        const b=battleState.enemyTeam[0];
+        b.currentHp=Math.max(0,b.currentHp-1);
+        renderHearts('enemyHearts',b.currentHp,6);
+        document.getElementById('enemyImg').classList.add('hit');
+        setTimeout(()=>document.getElementById('enemyImg').classList.remove('hit'),500);
+        renderTeamBars();
+        if(b.currentHp<=0){setTimeout(()=>{if(battleGen===g)handleEnemyFainted()},800)}
+        else{setTimeout(()=>{if(battleGen!==g)return;hideMsg();nextQuestion()},1200)}
+      },400);
+      return;
+    }
     const pPoke=battleState.playerTeam[battleState.playerIndex];
     const ePoke=battleState.enemyTeam[battleState.enemyIndex];
     let dmg=1,isCrit=false;
@@ -940,6 +1095,7 @@ function handleAnswer(isCorrect){
     },400);
   }else{
     showMsg(`❌ 答錯了！`,'bad');
+    if(battleState.boss){setTimeout(()=>{if(battleGen!==g)endBattle('defeat')},900);return}
     setTimeout(()=>{if(battleGen!==g)return;handleEnemyAttack()},800);
   }
 }
@@ -951,6 +1107,7 @@ function handleTimeout(){
   updateProgress();
   sfxWrong();
   showMsg(`⏰ 時間到！`,'bad');
+  if(battleState.boss){setTimeout(()=>{if(battleGen!==g)endBattle('defeat')},900);return}
   setTimeout(()=>{if(battleGen!==g)return;handleEnemyAttack()},800);
 }
 
@@ -982,6 +1139,7 @@ function handleEnemyAttack(){
 
 function handleEnemyFainted(){
   const g=battleGen;
+  if(battleState.boss){endBattle('victory');return}  // Boss: 6 連對擊敗即勝
   battleState.coinsEarned+=1;
   showCoinPopup('+1 🪙');
   sfxKO();
@@ -1059,14 +1217,19 @@ function endBattle(result){
   battleState.phase='ended';
   let title='',subtitle='',isWin=false;
   if(result==='victory'){
-    title='🏆 道館挑戰成功！';subtitle='太厲害了！你擊敗了館主！';
+    if(battleState.boss){
+      title='🏆 機械超夢討伐成功！';subtitle='6 連答對，完美壓制機械超夢！';
+    }else{
+      title='🏆 道館挑戰成功！';subtitle='太厲害了！你擊敗了館主！';
+    }
     isWin=true;battleState.coinsEarned+=3;
     gymState.totalWins++;
     gymState.bestStreak=Math.max(gymState.bestStreak,battleState.bestStreak);
-    gymState.bestKOs=Math.max(gymState.bestKOs,battleState.enemyIndex);
+    if(!battleState.boss)gymState.bestKOs=Math.max(gymState.bestKOs,battleState.enemyIndex);
     sfxVictory();
   }else if(result==='defeat'){
-    title='💀 挑戰失敗...';subtitle='不要氣餒，再試一次吧！';
+    title=battleState.boss?'💀 機械超夢太強了...':'💀 挑戰失敗...';
+    subtitle='不要氣餒，再試一次吧！';
     sfxDefeat();
   }else{
     title='🏳️ 已投降';subtitle='保存實力，下次再戰！';
@@ -1078,7 +1241,7 @@ function endBattle(result){
   document.getElementById('resultTitle').textContent=title;
   document.getElementById('resultTitle').className='result-title '+(isWin?'victory':'defeat');
   document.getElementById('resultSubtitle').textContent=subtitle;
-  document.getElementById('statKOs').textContent=battleState.enemyIndex;
+  document.getElementById('statKOs').textContent=battleState.boss?1:battleState.enemyIndex;
   document.getElementById('statCorrect').textContent=battleState.questionsCorrect;
   document.getElementById('statAttempts').textContent=battleState.questionsTotal;
   const acc=battleState.questionsTotal?Math.round(battleState.questionsCorrect/battleState.questionsTotal*100):0;
