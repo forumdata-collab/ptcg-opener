@@ -966,9 +966,8 @@ function updateTypeHint(){
 }
 
 function updateProgress(){
-  document.getElementById('battleProgress').textContent=battleState.boss
-    ?'🤖 機械超夢'+(battleState.streak>0?` x${battleState.streak}`:'')
-    :`第 ${battleState.enemyIndex+1}/5 隻`;
+  // Boss 戰: 機械超夢 xN 由 enemy-info + streakDisplay 顯示, 呢行留空慳位
+  document.getElementById('battleProgress').textContent=battleState.boss?'':`第 ${battleState.enemyIndex+1}/5 隻`;
   const s=battleState.streak;
   document.getElementById('streakDisplay').textContent=s>1?`🔥 連擊 x${s}`:'';
 }
