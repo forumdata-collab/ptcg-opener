@@ -719,6 +719,8 @@ function showCoinPopup(text){
 let battleGen=0;  // 新開戰遞增 → 舊輪轉嘅 pending setTimeout 全部失效 (防投降/結束後 race)
 function startBattle(){
   battleGen++;
+  // 精英戰換 FireRed Gym/Elite4 主題曲, 其餘用原 BGM
+  document.getElementById('bgm').src=currentDifficulty==='normal'?'gym-bgm-elite.mp3':'gym-bgm.mp3';
   initAudio();
   loadCollection();
   battleState={
