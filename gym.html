@@ -662,6 +662,17 @@ function fitQuestion(){
   if(el.scrollWidth>el.clientWidth)el.style.fontSize='18px';
 }
 
+// 機械超夢題庫: 跨場旋轉池 (localStorage), 60 題出完先重新洗牌 → 連續多場都唔會重覆
+const BOSS_POOL_KEY='ptcg_bossPool';
+function drawBossQuestions(n){
+  let pool=[];
+  try{pool=JSON.parse(localStorage.getItem(BOSS_POOL_KEY))}catch(e){}
+  if(!Array.isArray(pool)||pool.length<n)pool=[...BOSS_QUESTIONS].sort(()=>Math.random()-.5);
+  const out=pool.splice(0,n);
+  try{localStorage.setItem(BOSS_POOL_KEY,JSON.stringify(pool))}catch(e){}
+  return out;
+}
+
 // 機械超夢站位: 水平對準「頂部音響開關與代幣之間的缺口」(約 80% 屏幕寬), 腳踮背景圖深綠草地
 const BOSS_H_PCT=0.80;   // 水平中心, 對準 header 音響/代幣之間
 const BOSS_ANCHOR={y:218};  // 垂直: 背景圖(gym-bg-mecha.jpg 640x329)像素 深綠草地, cover 映射
@@ -853,7 +864,7 @@ function startBattle(){
     :getEnemyTeam(currentDifficulty);
   battleState={
     phase:'battle',enemyTeam,playerTeam:getPlayerTeam(),boss,
-    bossQuestions:boss?[...BOSS_QUESTIONS].sort(()=>Math.random()-.5).slice(0,9):null,  // 60 題隨機抽 9
+    bossQuestions:null,bossPool:boss?drawBossQuestions(9):null,bossQIdx:0,
     enemyIndex:0,playerIndex:0,coinsEarned:0,questionsCorrect:0,questionsTotal:0,
     currentQuestion:null,timeLeft:ANSWER_TIME,roundBusy:false,streak:0,bestStreak:0
   };
@@ -1007,8 +1018,9 @@ function nextQuestion(){
   const level=getMathLevelForEnemy(battleState.enemyIndex);
   const grid=document.getElementById('choicesGrid');
   if(battleState.boss){
-    // 小一奧數固定題庫, 順序出 (streak = 已答對數)
-    const q=battleState.bossQuestions[Math.min(battleState.streak,battleState.bossQuestions.length-1)];
+    // 題目以「已出題數」推進(bossQIdx), 答錯唔會重頭出; 池空就再抽, 跨場用 localStorage 旋轉池防重覆
+    if(battleState.bossQIdx>=battleState.bossPool.length)battleState.bossPool=battleState.bossPool.concat(drawBossQuestions(12));
+    const q=battleState.bossPool[battleState.bossQIdx++];
     battleState.currentQuestion=q;
     battleState.timeLeft=ANSWER_TIME;
     document.getElementById('mathQuestion').textContent=q.q;
@@ -1240,7 +1252,7 @@ function endBattle(result){
   let title='',subtitle='',isWin=false;
   if(result==='victory'){
     if(battleState.boss){
-      title='🏆 機械超夢討伐成功！';subtitle='9 連答對，完美壓制機械超夢！';
+      title='🏆 機械超夢討伐成功！';subtitle='答對 9 題，完美壓制機械超夢！';
     }else{
       title='🏆 道館挑戰成功！';subtitle='太厲害了！你擊敗了館主！';
     }
