@@ -79,7 +79,7 @@ body{
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #battleStage.mecha{background:url('gym-bg-mecha.jpg') center/cover no-repeat}
 #battleStage.mecha .enemy-side img{width:150px}
-#battleStage.mecha .enemy-side{right:calc(8% + 150px)}  /* 機械超夢向左移一個身位 */
+#battleStage.mecha .enemy-side{right:max(0px, calc(8% - 75px))}  /* 上步+150px 再向右移1.5身位(225px), max(0)防衝出畫面 */
 #battleStage.mecha .hearts{display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:2px 4px}
 #battleView.boss #enemyTeamBar{display:none}  /* Boss 戰: 敵方 6 心已喺 info box, 刪重複列慳空間 */
 
