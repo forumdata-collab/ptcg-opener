@@ -802,11 +802,11 @@ function fitQuestion(){
 
 // Boss 設定: mecha=機械超夢 (純答題, 無機制), snorlax=武裝卡比獸 (24 內部血=12 心, 睡眠機制)
 const BOSSES={
-  mecha:{zh:'機械超夢',img:'gym-mecha-boss-v2.png',types:[],maxHp:9,draw:9,half:false,
+  mecha:{zh:'機械超夢',img:'gym-mecha-boss-v2.png',types:[],maxHp:9,half:false,
     bgm:'gym-bgm-mecha.mp3',poolKey:'ptcg_bossPool',questions:BOSS_QUESTIONS,
     coins:3,imgW:110,aspect:322/240,anchorY:218,
     title:'🏆 機械超夢討伐成功！',subtitle:'答對 9 題，完美壓制機械超夢！',defeat:'💀 機械超夢太強了...'},
-  snorlax:{zh:'武裝卡比獸',img:'gym-snorlax-boss.png',types:['Normal'],maxHp:24,draw:12,half:true,
+  snorlax:{zh:'武裝卡比獸',img:'gym-snorlax-boss.png',types:['Normal'],maxHp:24,half:true,
     bgm:'gym-bgm-snorlax.mp3',poolKey:'ptcg_snorlaxPool',questions:SNORLAX_QUESTIONS,
     coins:5,imgW:125,aspect:271/300,anchorY:218,
     title:'🏆 武裝卡比獸討伐成功！',subtitle:'在卡比獸睡著時暴擊，答題擊敗牠！',defeat:'💀 武裝卡比獸太強了...',
@@ -1014,7 +1014,7 @@ function startBattle(){
     :getEnemyTeam(currentDifficulty);
   battleState={
     phase:'battle',enemyTeam,playerTeam:getPlayerTeam(),boss,
-    bossQuestions:null,bossPool:boss?drawBossQuestions(boss,bc.draw):null,bossQIdx:0,rounds:0,
+    bossQuestions:null,bossPool:boss?drawBossQuestions(boss,60):null,bossQIdx:0,rounds:0,
     enemyIndex:0,playerIndex:0,coinsEarned:0,questionsCorrect:0,questionsTotal:0,
     currentQuestion:null,timeLeft:ANSWER_TIME,roundBusy:false,streak:0,bestStreak:0
   };
