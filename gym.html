@@ -77,11 +77,24 @@ body{
 .diff-btn.boss.locked{filter:grayscale(1);opacity:.5;cursor:not-allowed}
 #toast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%) translateY(10px);background:rgba(20,20,30,.92);border:1px solid rgba(255,255,255,.15);color:#fff;padding:10px 18px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s;z-index:999;max-width:80vw;text-align:center}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-#battleStage.mecha{background:url('gym-bg-mecha.jpg') center/cover no-repeat}
+#battleStage.mecha,#battleStage.snorlax{background:url('gym-bg-mecha.jpg') center/cover no-repeat}
+#battleStage.mecha .enemy-side,#battleStage.snorlax .enemy-side{top:auto;right:auto}
+#battleStage.mecha .enemy-side .poke-ball,#battleStage.snorlax .enemy-side .poke-ball{--bx:40px}
 #battleStage.mecha .enemy-side img{width:110px;height:auto}
-#battleStage.mecha .enemy-side{top:auto;right:auto}
-#battleStage.mecha .enemy-side .poke-ball{--bx:40px}
+#battleStage.snorlax .enemy-side img{width:125px;height:auto}
 #battleStage.mecha .hearts{display:grid;grid-template-columns:repeat(3,auto);justify-content:center;gap:2px 4px}
+#battleStage.snorlax .hearts{display:grid;grid-template-columns:repeat(4,auto);justify-content:center;gap:2px 4px}
+/* 半心: 卡比獸 24 點內部制 = 12 心, 半心靠 CSS 漸層 clip 出嚟 (建議書 4.1 替代方案) */
+.heart.half{background:linear-gradient(90deg,#ff2d55 50%,#3b3b52 50%);background-clip:text;-webkit-background-clip:text;color:transparent}
+/* 睡眠 Zzz 動畫 */
+.zzz{position:absolute;top:-26px;left:50%;font-size:26px;font-weight:900;color:#cfd8ff;opacity:0;pointer-events:none;z-index:5;text-shadow:0 0 10px rgba(140,170,255,.95);animation:zzz 1.4s ease-in-out infinite}
+.zzz.show{opacity:1}
+.zzz.nofill{opacity:.3!important}
+@keyframes zzz{0%{transform:translate(-50%,0) scale(1)}50%{transform:translate(-50%,-8px) scale(1.12)}100%{transform:translate(-50%,-16px) scale(.9)}}
+/* 睡眠進度條 (status-bar 左格) */
+.sleep-lbl{font-size:13px;margin-right:4px}
+.sleep-bar{display:inline-block;width:110px;height:8px;border-radius:4px;background:rgba(255,255,255,.15);overflow:hidden;vertical-align:middle}
+.sleep-bar i{display:block;height:100%;width:0;border-radius:4px;transition:width .4s,background .4s}
 #battleView.boss #enemyTeamBar{display:none}  /* Boss 戰: 敵方 6 心已喺 info box, 刪重複列慳空間 */
 
 .start-btn{
@@ -424,10 +437,10 @@ body{
       <button class="diff-btn hard" onclick="selectDiff('hard',this)">🔥<br>冠軍</button>
     </div>
     <div class="boss-section">
-      <div class="boss-label">🤖 特別 Boss</div>
+      <div class="boss-label">⭐ 特別 Boss</div>
       <div class="difficulty-select">
-        <button class="diff-btn boss" onclick="selectDiff('boss',this)">🤖<br>機械超夢</button>
-        <button class="diff-btn boss locked" onclick="showToast('敬請期待！內容將於後續版本開放。')">🔒<br>卡比獸</button>
+        <button class="diff-btn boss" onclick="selectDiff('mecha',this)">🤖<br>機械超夢</button>
+        <button class="diff-btn boss" onclick="selectDiff('snorlax',this)">😴<br>武裝卡比獸</button>
         <button class="diff-btn boss locked" onclick="showToast('敬請期待！內容將於後續版本開放。')">🔒<br>謎之精靈</button>
       </div>
     </div>
@@ -458,6 +471,7 @@ body{
     <div class="combatant enemy-side" id="enemyCombatant">
       <img id="enemyImg" src="" alt="" loading="eager">
       <div class="poke-ball"></div>
+      <div class="zzz" id="zzz">Z</div>
     </div>
     <div class="type-hint" id="typeHint"></div>
     <div class="combatant player-side" id="playerCombatant">
@@ -585,66 +599,190 @@ function generateQuestion(level){
 
 // ===== BOSS QUESTIONS (小一至小三奧數 60 題, 偏推理, 每場隨機抽 9) =====
 const BOSS_QUESTIONS=[
-  {q:'2,4,6,8,?,12，?是多少？',opts:[9,10,11,14],a:10},
-  {q:'1,3,5,7,?,11，?是多少？',opts:[8,9,10,12],a:9},
+  {q:'2,4,6,8,?,12，?是多少？',opts:[9,10,11,14],a:1},
+  {q:'1,3,5,7,?,11，?是多少？',opts:[8,9,10,12],a:1},
   {q:'9,7,5,3,?，?是多少？',opts:[0,1,2,4],a:1},
-  {q:'1,2,4,8,?，?是多少？',opts:[14,15,16,18],a:16},
-  {q:'1,4,7,10,?，?是多少？',opts:[12,13,14,15],a:13},
-  {q:'20,16,12,8,?，?是多少？',opts:[2,4,6,8],a:4},
-  {q:'1,1,2,3,5,?，?是多少？',opts:[7,8,9,10],a:8},
-  {q:'5,10,15,20,?，?是多少？',opts:[22,24,25,30],a:25},
-  {q:'3,6,9,?,15，?是多少？',opts:[10,11,12,13],a:12},
-  {q:'2,4,8,16,?，?是多少？',opts:[24,30,32,36],a:32},
-  {q:'10,20,30,40,?，?是多少？',opts:[45,50,60,80],a:50},
-  {q:'1,2,4,7,11,?，?是多少？',opts:[14,15,16,17],a:16},
-  {q:'18,15,12,9,?，?是多少？',opts:[3,5,6,7],a:6},
-  {q:'2,3,5,8,?，?是多少？',opts:[11,12,13,14],a:13},
-  {q:'小紅前面3人，後面4人，全隊幾人？',opts:[7,8,9,10],a:8},
-  {q:'小明排第4，佢前面有幾人？',opts:[2,3,4,5],a:3},
-  {q:'隊裏10人，小明排第7，後面有幾人？',opts:[2,3,4,5],a:3},
-  {q:'鋸1次變2段，鋸2次變幾段？',opts:[2,3,4,5],a:3},
-  {q:'剪1刀變2張，剪3刀變幾張？',opts:[3,4,5,6],a:4},
-  {q:'時鐘由2點到5點，過了幾小時？',opts:[2,3,4,5],a:3},
-  {q:'8時30分加30分係幾點？',opts:[8,9,10,11],a:9},
-  {q:'兩隻貓共有幾隻腳？',opts:[6,7,8,10],a:8},
-  {q:'三隻小鳥共有幾隻腳？',opts:[4,6,8,12],a:6},
-  {q:'星期二是13日，星期三係幾日？',opts:[12,13,14,15],a:14},
-  {q:'一本書30頁，睇咗12頁，剩幾頁？',opts:[16,17,18,20],a:18},
-  {q:'小明有10粒糖，俾妹妹3粒，仲有幾粒？',opts:[6,7,8,9],a:7},
-  {q:'買雪糕前面5人，後面6人，全隊幾人？',opts:[11,12,13,14],a:12},
-  {q:'操場一圈200米，跑兩圈幾多米？',opts:[300,400,500,600],a:400},
-  {q:'1紅卡換2藍卡，3紅卡換幾張？',opts:[4,5,6,7],a:6},
-  {q:'1蘋果換3橙，2蘋果換幾橙？',opts:[5,6,7,8],a:6},
-  {q:'1個月亮換2個星，3月換幾星？',opts:[5,6,7,8],a:6},
-  {q:'1星換2圓，2星加1圓係幾圓？',opts:[4,5,6,7],a:5},
-  {q:'1兔換2雞，2兔換幾雞？',opts:[3,4,5,6],a:4},
-  {q:'1大杯裝2細杯，4細杯係幾多大杯？',opts:[1,2,3,4],a:2},
-  {q:'1車有4輪，2車加1後備輪共幾輪？',opts:[8,9,10,12],a:9},
-  {q:'1盒有6粒糖，半盒有幾粒？',opts:[2,3,4,6],a:3},
-  {q:'三角形有幾多條邊？',opts:[2,3,4,5],a:3},
-  {q:'正方形有幾多條邊？',opts:[3,4,5,6],a:4},
+  {q:'1,2,4,8,?，?是多少？',opts:[14,15,16,18],a:2},
+  {q:'1,4,7,10,?，?是多少？',opts:[12,13,14,15],a:1},
+  {q:'20,16,12,8,?，?是多少？',opts:[2,4,6,8],a:1},
+  {q:'1,1,2,3,5,?，?是多少？',opts:[7,8,9,10],a:1},
+  {q:'5,10,15,20,?，?是多少？',opts:[22,24,25,30],a:2},
+  {q:'3,6,9,?,15，?是多少？',opts:[10,11,12,13],a:2},
+  {q:'2,4,8,16,?，?是多少？',opts:[24,30,32,36],a:2},
+  {q:'10,20,30,40,?，?是多少？',opts:[45,50,60,80],a:1},
+  {q:'1,2,4,7,11,?，?是多少？',opts:[14,15,16,17],a:2},
+  {q:'18,15,12,9,?，?是多少？',opts:[3,5,6,7],a:2},
+  {q:'2,3,5,8,?，?是多少？',opts:[11,12,13,14],a:2},
+  {q:'小紅前面3人，後面4人，全隊幾人？',opts:[7,8,9,10],a:1},
+  {q:'小明排第4，佢前面有幾人？',opts:[2,3,4,5],a:1},
+  {q:'隊裏10人，小明排第7，後面有幾人？',opts:[2,3,4,5],a:1},
+  {q:'鋸1次變2段，鋸2次變幾段？',opts:[2,3,4,5],a:1},
+  {q:'剪1刀變2張，剪3刀變幾張？',opts:[3,4,5,6],a:1},
+  {q:'時鐘由2點到5點，過了幾小時？',opts:[2,3,4,5],a:1},
+  {q:'8時30分加30分係幾點？',opts:[8,9,10,11],a:1},
+  {q:'兩隻貓共有幾隻腳？',opts:[6,7,8,10],a:2},
+  {q:'三隻小鳥共有幾隻腳？',opts:[4,6,8,12],a:1},
+  {q:'星期二是13日，星期三係幾日？',opts:[12,13,14,15],a:2},
+  {q:'一本書30頁，睇咗12頁，剩幾頁？',opts:[16,17,18,20],a:2},
+  {q:'小明有10粒糖，俾妹妹3粒，仲有幾粒？',opts:[6,7,8,9],a:1},
+  {q:'買雪糕前面5人，後面6人，全隊幾人？',opts:[11,12,13,14],a:1},
+  {q:'操場一圈200米，跑兩圈幾多米？',opts:[300,400,500,600],a:1},
+  {q:'1紅卡換2藍卡，3紅卡換幾張？',opts:[4,5,6,7],a:2},
+  {q:'1蘋果換3橙，2蘋果換幾橙？',opts:[5,6,7,8],a:1},
+  {q:'1個月亮換2個星，3月換幾星？',opts:[5,6,7,8],a:1},
+  {q:'1星換2圓，2星加1圓係幾圓？',opts:[4,5,6,7],a:1},
+  {q:'1兔換2雞，2兔換幾雞？',opts:[3,4,5,6],a:1},
+  {q:'1大杯裝2細杯，4細杯係幾多大杯？',opts:[1,2,3,4],a:1},
+  {q:'1車有4輪，2車加1後備輪共幾輪？',opts:[8,9,10,12],a:1},
+  {q:'1盒有6粒糖，半盒有幾粒？',opts:[2,3,4,6],a:1},
+  {q:'三角形有幾多條邊？',opts:[2,3,4,5],a:1},
+  {q:'正方形有幾多條邊？',opts:[3,4,5,6],a:1},
   {q:'圓形有幾多個角？',opts:[0,1,2,3],a:0},
-  {q:'正方體有幾多個面？',opts:[4,6,8,12],a:6},
-  {q:'骰子有幾多面？',opts:[4,5,6,8],a:6},
-  {q:'長方形有幾多個角？',opts:[3,4,5,6],a:4},
-  {q:'用4支火柴排一個正方形，用幾支？',opts:[3,4,5,6],a:4},
-  {q:'兩支鉛筆共有幾個筆尖？',opts:[1,2,3,4],a:2},
-  {q:'1元有幾多個5角？',opts:[2,4,5,10],a:2},
-  {q:'一星期有幾日？',opts:[5,6,7,8],a:7},
-  {q:'一時有幾多分鐘？',opts:[30,45,60,90],a:60},
-  {q:'一日有幾多小時？',opts:[12,24,36,48],a:24},
-  {q:'半日有幾多小時？',opts:[6,12,18,24],a:12},
-  {q:'1米有幾多厘米？',opts:[10,100,1000,10000],a:100},
-  {q:'1年有幾多個月？',opts:[10,11,12,13],a:12},
-  {q:'1分鐘有幾多秒？',opts:[30,60,90,100],a:60},
-  {q:'一本書85頁，睇咗29頁，剩幾頁？',opts:[54,55,56,58],a:56},
-  {q:'3個蘋果共15元，每個幾元？',opts:[3,4,5,6],a:5},
-  {q:'兩數之和36，一個係14，另一個幾多？',opts:[20,21,22,24],a:22},
-  {q:'最大嘅三位數係幾多？',opts:[900,990,999,1000],a:999},
-  {q:'1+2+3+4+5=?',opts:[14,15,16,17],a:15},
-  {q:'100-40-30=?',opts:[20,30,40,50],a:30},
-  {q:'7×2=?',opts:[12,13,14,15],a:14},
-  {q:'一半嘅10再加2係幾多？',opts:[5,6,7,8],a:7},
+  {q:'正方體有幾多個面？',opts:[4,6,8,12],a:1},
+  {q:'骰子有幾多面？',opts:[4,5,6,8],a:2},
+  {q:'長方形有幾多個角？',opts:[3,4,5,6],a:1},
+  {q:'用4支火柴排一個正方形，用幾支？',opts:[3,4,5,6],a:1},
+  {q:'兩支鉛筆共有幾個筆尖？',opts:[1,2,3,4],a:1},
+  {q:'1元有幾多個5角？',opts:[2,4,5,10],a:0},
+  {q:'一星期有幾日？',opts:[5,6,7,8],a:2},
+  {q:'一時有幾多分鐘？',opts:[30,45,60,90],a:2},
+  {q:'一日有幾多小時？',opts:[12,24,36,48],a:1},
+  {q:'半日有幾多小時？',opts:[6,12,18,24],a:1},
+  {q:'1米有幾多厘米？',opts:[10,100,1000,10000],a:1},
+  {q:'1年有幾多個月？',opts:[10,11,12,13],a:2},
+  {q:'1分鐘有幾多秒？',opts:[30,60,90,100],a:1},
+  {q:'一本書85頁，睇咗29頁，剩幾頁？',opts:[54,55,56,58],a:2},
+  {q:'3個蘋果共15元，每個幾元？',opts:[3,4,5,6],a:2},
+  {q:'兩數之和36，一個係14，另一個幾多？',opts:[20,21,22,24],a:2},
+  {q:'最大嘅三位數係幾多？',opts:[900,990,999,1000],a:2},
+  {q:'1+2+3+4+5=?',opts:[14,15,16,17],a:1},
+  {q:'100-40-30=?',opts:[20,30,40,50],a:1},
+  {q:'7×2=?',opts:[12,13,14,15],a:2},
+  {q:'一半嘅10再加2係幾多？',opts:[5,6,7,8],a:2},
+];
+
+// 武裝卡比獸題庫: 小四至小六奧數 120 題 (跨場旋轉池 ptcg_snorlaxPool)
+const SNORLAX_QUESTIONS=[
+  {q:"2,5,8,11,下一個數是多少？",opts:[12,13,14,15],a:2},
+  {q:"3,6,12,24,下一個數是多少？",opts:[36,42,48,54],a:2},
+  {q:"1,4,9,16,下一個數是多少？",opts:[20,22,24,25],a:3},
+  {q:"2,6,12,20,下一個數是多少？",opts:[24,28,30,32],a:2},
+  {q:"1,4,7,10,下一個數是多少？",opts:[11,12,13,14],a:2},
+  {q:"5,10,20,40,下一個數是多少？",opts:[60,70,80,90],a:2},
+  {q:"2,5,10,17,26,下一個數是多少？",opts:[33,35,37,39],a:2},
+  {q:"1,3,6,10,15,下一個數是多少？",opts:[18,20,21,24],a:2},
+  {q:"3,8,15,24,35,下一個數是多少？",opts:[44,46,48,50],a:2},
+  {q:"1,2,4,8,16,下一個數是多少？",opts:[24,30,32,36],a:2},
+  {q:"2,4,8,14,22,下一個數是多少？",opts:[28,30,32,34],a:2},
+  {q:"1,8,27,64,下一個數是多少？",opts:[100,121,125,128],a:2},
+  {q:"10,9,7,4,0,下一個數是多少？",opts:[-5,-4,-2,1],a:0},
+  {q:"2,3,5,8,12,17,下一個數是多少？",opts:[21,22,23,25],a:2},
+  {q:"1,4,10,22,46,下一個數是多少？",opts:[88,92,94,96],a:2},
+  {q:"100,90,81,73,66,下一個數是多少？",opts:[58,60,62,64],a:1},
+  {q:"1,1,2,3,5,8,下一個數是多少？",opts:[11,12,13,15],a:2},
+  {q:"2,6,18,54,下一個數是多少？",opts:[108,150,162,170],a:2},
+  {q:"4,7,13,25,49,下一個數是多少？",opts:[91,95,97,105],a:2},
+  {q:"81,27,9,3,下一個數是多少？",opts:[0,1,2,3],a:1},
+  {q:"兩數和48，相差12，兩數是多少？",opts:["30和18","28和20","32和16","26和22"],a:0},
+  {q:"兩數和70，相差18，兩數是多少？",opts:["44和26","42和28","46和24","40和30"],a:0},
+  {q:"一數加5再乘3得30，原數是多少？",opts:[4,5,6,7],a:1},
+  {q:"一數的4倍減7等於29，這數是多少？",opts:[7,8,9,10],a:2},
+  {q:"一數的3倍加8等於35，這數是多少？",opts:[7,8,9,11],a:2},
+  {q:"連續三個整數和42，中間數是多少？",opts:[12,13,14,15],a:2},
+  {q:"連續五個整數和75，最小數是多少？",opts:[11,12,13,15],a:2},
+  {q:"連續三個偶數和72，最大數是多少？",opts:[22,24,26,28],a:2},
+  {q:"連續三個奇數和45，最小數是多少？",opts:[11,13,15,17],a:1},
+  {q:"兩個相鄰偶數和26，它們是多少？",opts:["12和14","10和16","8和18","6和20"],a:0},
+  {q:"兩個相鄰奇數和40，它們是多少？",opts:["19和21","17和23","15和25","18和22"],a:0},
+  {q:"一數除以6餘2，最小兩位數是多少？",opts:[12,14,16,20],a:1},
+  {q:"一數除以7餘4，最小三位數是多少？",opts:[100,101,102,106],a:2},
+  {q:"1至50共有多少個奇數？",opts:[20,24,25,26],a:2},
+  {q:"1至100共有多少個偶數？",opts:[40,49,50,51],a:2},
+  {q:"1至100共有多少個5的倍數？",opts:[16,18,20,22],a:2},
+  {q:"1至100共有多少個3的倍數？",opts:[30,32,33,35],a:2},
+  {q:"1至100中，同時是2和3倍數有多少個？",opts:[14,15,16,18],a:2},
+  {q:"1至200中，有多少個10的倍數？",opts:[18,19,20,21],a:2},
+  {q:"1至100中，數字5出現多少次？",opts:[18,19,20,21],a:2},
+  {q:"甲有36元，比乙多12元，共有多少元？",opts:[48,54,60,66],a:2},
+  {q:"4盒彩筆，每盒18枝，共有多少枝？",opts:[64,70,72,76],a:2},
+  {q:"96粒糖平均分成8袋，每袋多少粒？",opts:[10,11,12,14],a:2},
+  {q:"7人平均分56本書，每人幾本？",opts:[6,7,8,9],a:2},
+  {q:"甲乙共有50粒糖，甲比乙多10粒，各多少？",opts:["30和20","28和22","32和18","25和25"],a:0},
+  {q:"一本書每天看12頁，5天後剩20頁，全書多少頁？",opts:[70,76,80,84],a:2},
+  {q:"小明每天存8元，15天後有多少元？",opts:[105,112,120,125],a:2},
+  {q:"一條繩長60米，剪成5段，每段多少米？",opts:[10,12,15,20],a:1},
+  {q:"5人分75個蘋果，每人相同，剩多少個？",opts:[0,1,3,5],a:0},
+  {q:"一箱有24瓶，7箱共有多少瓶？",opts:[148,158,168,178],a:2},
+  {q:"甲每天走3公里，8天共走多少公里？",opts:[18,21,24,27],a:2},
+  {q:"一輛車每小時行60公里，3小時行多少公里？",opts:[120,160,180,240],a:2},
+  {q:"120公里路程，每小時40公里，需多少小時？",opts:[2,3,4,5],a:1},
+  {q:"2小時45分鐘等於多少分鐘？",opts:[145,155,165,175],a:2},
+  {q:"150分鐘等於幾小時幾分鐘？",opts:["2小時30分","2小時20分","2小時50分","1小時50分"],a:0},
+  {q:"上午8時出發，經過5小時30分是幾時？",opts:["上午1時30分","下午1時30分","下午2時30分","中午12時30分"],a:1},
+  {q:"一件衣服200元，打八折後多少元？",opts:[150,155,160,165],a:2},
+  {q:"一件商品原價150元，加價20%後多少元？",opts:[165,170,180,185],a:2},
+  {q:"一數增加25%後為100，原數是多少？",opts:[70,75,80,85],a:2},
+  {q:"一數減少20%後為64，原數是多少？",opts:[72,75,80,84],a:2},
+  {q:"24和36的最大公因數是多少？",opts:[6,9,12,18],a:2},
+  {q:"12和18的最小公倍數是多少？",opts:[30,36,54,72],a:1},
+  {q:"15和25的最大公因數是多少？",opts:[3,5,10,15],a:1},
+  {q:"8和12的最小公倍數是多少？",opts:[16,20,24,48],a:2},
+  {q:"18和30的最大公因數是多少？",opts:[3,6,9,12],a:1},
+  {q:"6和15的最小公倍數是多少？",opts:[15,25,30,45],a:2},
+  {q:"兩數最大公因數為6，可能是哪兩數？",opts:["12和18","8和12","10和15","9和14"],a:0},
+  {q:"兩數最小公倍數為24，可能是哪兩數？",opts:["8和12","6和10","9和12","5和8"],a:0},
+  {q:"1至100中，既是4又是6倍數有多少個？",opts:[6,7,8,10],a:2},
+  {q:"1至200中，同時是3和5倍數有多少個？",opts:[11,12,13,14],a:2},
+  {q:"一數是12和18的公倍數，最小是多少？",opts:[24,30,36,42],a:2},
+  {q:"一數是8和12的公倍數，最小是多少？",opts:[16,20,24,32],a:2},
+  {q:"一數除以5餘3，最小兩位數是多少？",opts:[8,11,13,18],a:2},
+  {q:"一數除以4餘1，除以3餘2，最小是多少？",opts:[4,5,7,8],a:1},
+  {q:"一數除以5餘2，除以3餘1，最小是多少？",opts:[5,6,7,8],a:2},
+  {q:"兩數最大公因數為5，最小公倍數為60，可能是哪兩數？",opts:["15和20","10和25","12和15","5和30"],a:0},
+  {q:"兩數最大公因數為6，最小公倍數為72，可能是哪兩數？",opts:["18和24","12和30","16和18","24和30"],a:0},
+  {q:"1至50中，有多少個質數？",opts:[13,14,15,16],a:2},
+  {q:"20至50中，有多少個質數？",opts:[6,7,8,9],a:1},
+  {q:"100以內最大的質數是多少？",opts:[89,91,93,97],a:3},
+  {q:"正方形周長36厘米，面積多少？",opts:[72,79,81,84],a:2},
+  {q:"正方形面積64平方厘米，周長多少？",opts:[24,28,32,36],a:2},
+  {q:"長方形長12厘米、寬7厘米，面積多少？",opts:[76,80,84,92],a:2},
+  {q:"長方形面積72平方厘米，長9厘米，寬多少？",opts:[6,7,8,9],a:2},
+  {q:"長方形周長50厘米，長15厘米，寬多少？",opts:[8,9,10,12],a:2},
+  {q:"三角形底12厘米、高8厘米，面積多少？",opts:[40,44,48,96],a:2},
+  {q:"梯形上底6、下底10、高5厘米，面積多少？",opts:[32,36,40,80],a:2},
+  {q:"圓半徑7厘米，直徑是多少？",opts:[12,14,15,17],a:1},
+  {q:"圓直徑18厘米，半徑是多少？",opts:[6,8,9,12],a:2},
+  {q:"一個直角三角形兩直角邊6、8厘米，斜邊多少？",opts:[8,9,10,12],a:2},
+  {q:"三角形三邊5、12、13厘米，是直角三角形嗎？",opts:["是","不是","需要知道角度","無法判斷"],a:0},
+  {q:"正方形邊長增加一倍，面積變成幾倍？",opts:[2,3,4,6],a:2},
+  {q:"長方形長增加一倍，寬不變，面積變幾倍？",opts:[1,2,3,4],a:1},
+  {q:"正方形周長增加20%，面積增加多少？",opts:["20%","40%","44%","48%"],a:2},
+  {q:"一個正方形面積100平方厘米，邊長多少？",opts:[8,9,10,12],a:2},
+  {q:"長方形長是寬的2倍，周長60厘米，面積多少？",opts:[160,180,200,240],a:2},
+  {q:"長方形長10厘米、寬6厘米，周長多少？",opts:[28,30,32,34],a:2},
+  {q:"三角形面積36平方厘米，底9厘米，高多少？",opts:[6,7,8,9],a:2},
+  {q:"梯形面積40平方厘米，高5厘米，上下底和是多少？",opts:[12,14,16,20],a:2},
+  {q:"正方形與長方形周長相同，哪個面積較大？",opts:["正方形","長方形","一樣大","長方形較大"],a:0},
+  {q:"雞兔共10隻，共有28隻腳，各有多少？",opts:["雞6兔4","雞5兔5","雞4兔6","雞7兔3"],a:0},
+  {q:"雞兔共12隻，共有34隻腳，各有多少？",opts:["雞7兔5","雞6兔6","雞5兔7","雞8兔4"],a:0},
+  {q:"雞兔共20隻，共有56隻腳，各有多少？",opts:["雞12兔8","雞11兔9","雞10兔10","雞13兔7"],a:0},
+  {q:"4人互相握手一次，共握手多少次？",opts:[4,5,6,8],a:2},
+  {q:"6人互相握手一次，共握手多少次？",opts:[12,15,18,21],a:1},
+  {q:"8人互相握手一次，共握手多少次？",opts:[24,26,28,32],a:2},
+  {q:"5人中選2人，有多少種選法？",opts:[8,9,10,15],a:2},
+  {q:"7人中選3人，有多少種選法？",opts:[30,35,40,45],a:1},
+  {q:"6本不同書排成一列，有多少種排法？",opts:[120,240,720,1080],a:2},
+  {q:"5本不同書排成一列，有多少種排法？",opts:[60,100,120,150],a:2},
+  {q:"用1、2、3組成三位數，有多少種？",opts:[4,6,9,12],a:1},
+  {q:"用1、2、3、4組成兩位數，有多少種？",opts:[8,10,12,16],a:2},
+  {q:"用0、1、2、3組成三位數，有多少種？",opts:[12,16,18,24],a:2},
+  {q:"用1、2、3、4、5組成三位偶數，有多少種？",opts:[18,20,24,30],a:2},
+  {q:"甲乙丙三人比賽，冠亞季有多少種結果？",opts:[4,6,8,9],a:1},
+  {q:"一張紙對摺5次，共有多少層？",opts:[16,25,30,32],a:3},
+  {q:"9個球中一個較重，最少幾次找出？",opts:[2,3,4,5],a:0},
+  {q:"100枚硬幣中一枚較重，最少幾次找出？",opts:[4,5,6,7],a:1},
+  {q:"甲乙年齡和40，4年後甲是乙兩倍，現在各幾歲？",opts:["甲28乙12","甲26乙14","甲30乙10","甲24乙16"],a:0},
+  {q:"一個數除以5餘3，除以7餘2，最小是多少？",opts:[13,18,23,28],a:2},
 ];
 
 let toastTimer=null;
@@ -662,33 +800,44 @@ function fitQuestion(){
   if(el.scrollWidth>el.clientWidth)el.style.fontSize='18px';
 }
 
-// 機械超夢題庫: 跨場旋轉池 (localStorage), 60 題出完先重新洗牌 → 連續多場都唔會重覆
-const BOSS_POOL_KEY='ptcg_bossPool';
-function drawBossQuestions(n){
+// Boss 設定: mecha=機械超夢 (純答題, 無機制), snorlax=武裝卡比獸 (24 內部血=12 心, 睡眠機制)
+const BOSSES={
+  mecha:{zh:'機械超夢',img:'gym-mecha-boss-v2.png',types:[],maxHp:9,draw:9,half:false,
+    bgm:'gym-bgm-mecha.mp3',poolKey:'ptcg_bossPool',questions:BOSS_QUESTIONS,
+    coins:3,imgW:110,aspect:322/240,anchorY:218,
+    title:'🏆 機械超夢討伐成功！',subtitle:'答對 9 題，完美壓制機械超夢！',defeat:'💀 機械超夢太強了...'},
+  snorlax:{zh:'武裝卡比獸',img:'gym-snorlax-boss.png',types:['Normal'],maxHp:24,draw:12,half:true,
+    bgm:'gym-bgm-snorlax.mp3',poolKey:'ptcg_snorlaxPool',questions:SNORLAX_QUESTIONS,
+    coins:5,imgW:125,aspect:271/300,anchorY:218,
+    title:'🏆 武裝卡比獸討伐成功！',subtitle:'在卡比獸睡著時暴擊，答題擊敗牠！',defeat:'💀 武裝卡比獸太強了...',
+    sleep:{turn:10,interval:45,length:8,heal:2}}  // 每回合+10s, 45s 入睡, 睡 8s, 回 2 點, 睡著被打 2 點
+};
+// 跨場旋轉池 (localStorage): 各 boss 獨立池, 出完先重新洗牌 → 連續多場都唔會重覆
+function drawBossQuestions(bossKey,n){
+  const bc=BOSSES[bossKey];
   let pool=[];
-  try{pool=JSON.parse(localStorage.getItem(BOSS_POOL_KEY))}catch(e){}
-  if(!Array.isArray(pool)||pool.length<n)pool=[...BOSS_QUESTIONS].sort(()=>Math.random()-.5);
+  try{pool=JSON.parse(localStorage.getItem(bc.poolKey))}catch(e){}
+  if(!Array.isArray(pool)||pool.length<n)pool=[...bc.questions].sort(()=>Math.random()-.5);
   const out=pool.splice(0,n);
-  try{localStorage.setItem(BOSS_POOL_KEY,JSON.stringify(pool))}catch(e){}
+  try{localStorage.setItem(bc.poolKey,JSON.stringify(pool))}catch(e){}
   return out;
 }
 
-// 機械超夢站位: 水平對準「頂部音響開關與代幣之間的缺口」(約 80% 屏幕寬), 腳踮背景圖深綠草地
-const BOSS_H_PCT=0.80;   // 水平中心, 對準 header 音響/代幣之間
-const BOSS_ANCHOR={y:218};  // 垂直: 背景圖(gym-bg-mecha.jpg 640x329)像素 深綠草地, cover 映射
+// Boss 站位: 水平對準「頂部音響開關與代幣之間的缺口」(約 80% 屏幕寬), 腳踮背景圖深綠草地
+const BOSS_H_PCT=0.80;
 function placeBoss(){
   if(!battleState||!battleState.boss)return;
+  const bc=BOSSES[battleState.boss];
   const stage=document.getElementById('battleStage');
   const c=document.getElementById('enemyCombatant');
   const img=document.getElementById('enemyImg');
   if(!stage||!c||!img)return;
-  const IMG_W=110;                       // mecha boss 顯示寬 (px)
   const bgH=329;
   const scale=Math.max(stage.clientWidth/640,stage.clientHeight/bgH);
   const offY=(stage.clientHeight-bgH*scale)/2;
   const ax=stage.clientWidth*BOSS_H_PCT;     // 水平: % 對準 header, 唔靠 cover 映射
-  const ay=BOSS_ANCHOR.y*scale+offY;         // 垂直: cover 映射到草地
-  const dispH=IMG_W*322/240;                // 148 (原圖 240→322 比例)
+  const ay=bc.anchorY*scale+offY;            // 垂直: cover 映射到草地
+  const dispH=bc.imgW*bc.aspect;
   c.style.left=(ax-c.clientWidth/2)+'px';   // combatant 置中於目標, 內 img 亦置中
   c.style.top=(ay-dispH)+'px';
 }
@@ -853,23 +1002,29 @@ function showCoinPopup(text){
 let battleGen=0;  // 新開戰遞增 → 舊輪轉嘅 pending setTimeout 全部失效 (防投降/結束後 race)
 function startBattle(){
   battleGen++;
-  const boss=currentDifficulty==='boss';
+  const boss=BOSSES[currentDifficulty]?currentDifficulty:null;  // 'mecha'|'snorlax'|null
+  const bc=boss?BOSSES[boss]:null;
   ANSWER_TIME=boss?20:15;
-  // 精英=FireRed Gym, 冠軍=HGSS Champion, Boss=GSC Gym Leader (Kanto), 新手=原 BGM
-  document.getElementById('bgm').src=boss?'gym-bgm-mecha.mp3':currentDifficulty==='normal'?'gym-bgm-elite.mp3':currentDifficulty==='hard'?'gym-bgm-champion.mp3':'gym-bgm.mp3';
+  // 精英=FireRed Gym, 冠軍=HGSS Champion, 機械超夢=GSC Kanto Gym, 卡比獸=Let's Go Champion, 新手=原 BGM
+  document.getElementById('bgm').src=boss?bc.bgm:currentDifficulty==='normal'?'gym-bgm-elite.mp3':currentDifficulty==='hard'?'gym-bgm-champion.mp3':'gym-bgm.mp3';
   initAudio();
   loadCollection();
   const enemyTeam=boss
-    ?[{id:-1,zh:'機械超夢',types:[],currentHp:9,maxHp:9,img:'gym-mecha-boss-v2.png'}]
+    ?[{id:-1,zh:bc.zh,types:bc.types,currentHp:bc.maxHp,maxHp:bc.maxHp,img:bc.img,sleepTimer:0,isSleeping:false,sleepDuration:0}]
     :getEnemyTeam(currentDifficulty);
   battleState={
     phase:'battle',enemyTeam,playerTeam:getPlayerTeam(),boss,
-    bossQuestions:null,bossPool:boss?drawBossQuestions(9):null,bossQIdx:0,
+    bossQuestions:null,bossPool:boss?drawBossQuestions(boss,bc.draw):null,bossQIdx:0,rounds:0,
     enemyIndex:0,playerIndex:0,coinsEarned:0,questionsCorrect:0,questionsTotal:0,
     currentQuestion:null,timeLeft:ANSWER_TIME,roundBusy:false,streak:0,bestStreak:0
   };
-  document.getElementById('battleStage').classList.toggle('mecha',boss);
-  document.getElementById('battleView').classList.toggle('boss',boss);
+  const stage=document.getElementById('battleStage');
+  stage.classList.toggle('mecha',boss==='mecha');
+  stage.classList.toggle('snorlax',boss==='snorlax');
+  document.getElementById('battleView').classList.toggle('boss',!!boss);
+  if(boss&&bc.sleep){
+    document.getElementById('battleProgress').innerHTML='<span class="sleep-lbl">😴</span><span class="sleep-bar"><i id="sleepFill"></i></span>';
+  }
   hideMsg();  // 清除上一場殘留嘅戰鬥訊息
   showView('battleView');
   // 新開戰: 清空精靈 pid + src, 當首次出場 → 直接拋球釋出 (唔會行「收返舊精靈」)
@@ -891,8 +1046,8 @@ function renderTeamBars(){
   const eBar=document.getElementById('enemyTeamBar');
   const pBar=document.getElementById('playerTeamBar');
   if(battleState.boss){
-    const b=battleState.enemyTeam[0];
-    eBar.innerHTML=`<div class="team-slot ${b.currentHp>0?'active':'fainted'}"><img src="gym-mecha-boss-v2.png" alt=""><div class="hp-dots">${Array(6).fill(0).map((_,j)=>`<div class="hp-dot ${j<b.currentHp?'alive':''}"></div>`).join('')}</div></div>`;
+    const bc=BOSSES[battleState.boss],b=battleState.enemyTeam[0];
+    eBar.innerHTML=`<div class="team-slot ${b.currentHp>0?'active':'fainted'}"><img src="${bc.img}" alt=""><div class="hp-dots">${Array(6).fill(0).map((_,j)=>`<div class="hp-dot ${j<b.currentHp?'alive':''}"></div>`).join('')}</div></div>`;
   }else{
   eBar.innerHTML=battleState.enemyTeam.map((p,i)=>
     `<div class="team-slot ${i===battleState.enemyIndex?'active':''} ${p.currentHp<=0?'fainted':''}">`+
@@ -922,12 +1077,13 @@ function renderCombatants(){
   pImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
   swapCombatant(pImg,loadPlayerSprite,pPoke.id);  // 我方先出
   if(battleState.boss){
-    // Boss: 機械超夢 — 本地 PNG, 9 心 (3x3), 唔用 PokeAPI
+    // Boss: 本地 PNG, 唔用 PokeAPI; 心數=maxHp (卡比獸 24 點=12 半心)
+    const bc=BOSSES[battleState.boss];
     document.getElementById('enemyName').textContent=ePoke.zh;
-    document.getElementById('enemyTypes').innerHTML='';
-    renderHearts('enemyHearts',ePoke.currentHp,9);
+    document.getElementById('enemyTypes').innerHTML=ePoke.types.map(t=>`<span class="type-badge type-${t}">${CN_TYPE[t]||t}</span>`).join('');
+    renderHearts('enemyHearts',ePoke.currentHp,ePoke.maxHp,bc.half);
     eImg.classList.remove('fainted-img','hit','knockback','attack-lunge');
-    setTimeout(()=>{if(gen!==battleGen)return;swapCombatant(eImg,(im)=>{im.src='gym-mecha-boss-v2.png'},-1)},100);
+    setTimeout(()=>{if(gen!==battleGen)return;swapCombatant(eImg,(im)=>{im.src=bc.img},-1)},100);
   }else{
   preloadSprites(ePoke.id);  // 動畫期間(1.4s)預先下載, 現身時即刻顯示
   document.getElementById('enemyName').textContent=ePoke.zh;
@@ -985,16 +1141,23 @@ function swapCombatant(imgEl,loadFn,pokeId){
   },850);
 }
 
-function renderHearts(elId,hp,max){
+function renderHearts(elId,hp,max,half){
   max=max||MAX_HP;
-  document.getElementById(elId).innerHTML=Array(max).fill('❤️').map((h,i)=>`<span class="heart ${i<hp?'':'lost'}">${h}</span>`).join('');
+  const n=half?Math.ceil(max/2):max;
+  document.getElementById(elId).innerHTML=Array(n).fill('❤️').map((h,i)=>{
+    let cls;
+    if(half){const rem=hp-i*2;cls=rem>=2?'full':(rem===1?'half':'lost')}
+    else cls=i<hp?'full':'lost';
+    return `<span class="heart ${cls}">${h}</span>`;
+  }).join('');
 }
 
 function updateTypeHint(){
   const pPoke=battleState.playerTeam[battleState.playerIndex];
   const ePoke=battleState.enemyTeam[battleState.enemyIndex];
   const el=document.getElementById('typeHint');
-  if(!pPoke||!ePoke||battleState.boss){el.classList.remove('show');return}
+  if(!pPoke||!ePoke)return;
+  if(battleState.boss&&!BOSSES[battleState.boss].sleep){el.classList.remove('show');return}  // 機械超夢: 無屬性
   const hint=getTypeHintText(pPoke,ePoke);
   el.textContent=hint.text;
   el.className='type-hint '+hint.cls;
@@ -1002,8 +1165,10 @@ function updateTypeHint(){
 }
 
 function updateProgress(){
-  // Boss 戰: 機械超夢 xN 由 enemy-info + streakDisplay 顯示, 呢行留空慳位
-  document.getElementById('battleProgress').textContent=battleState.boss?'':`第 ${battleState.enemyIndex+1}/5 隻`;
+  // Boss: 機械超夢 xN 由 enemy-info + streakDisplay 顯示; 卡比獸有睡眠進度條 (startBattle 注入), 都唔郁
+  const el=document.getElementById('battleProgress');
+  if(battleState.boss){if(!BOSSES[battleState.boss].sleep)el.textContent='';}
+  else el.textContent=`第 ${battleState.enemyIndex+1}/5 隻`;
   const s=battleState.streak;
   document.getElementById('streakDisplay').textContent=s>1?`🔥 連擊 x${s}`:'';
 }
@@ -1015,16 +1180,19 @@ function nextQuestion(){
   // ✅ FIX: reset roundBusy FIRST to prevent deadlock
   battleState.roundBusy=false;
 
+  // 卡比獸睡眠結算: 每答一題 +10s, 滿 45s 入睡回血; 睡著時答啱暴擊、答錯唔會俾佢攻擊
+  if(battleState.boss&&BOSSES[battleState.boss].sleep&&battleState.rounds>0)endTurn();
+
   const level=getMathLevelForEnemy(battleState.enemyIndex);
   const grid=document.getElementById('choicesGrid');
   if(battleState.boss){
     // 題目以「已出題數」推進(bossQIdx), 答錯唔會重頭出; 池空就再抽, 跨場用 localStorage 旋轉池防重覆
-    if(battleState.bossQIdx>=battleState.bossPool.length)battleState.bossPool=battleState.bossPool.concat(drawBossQuestions(12));
+    if(battleState.bossQIdx>=battleState.bossPool.length)battleState.bossPool=battleState.bossPool.concat(drawBossQuestions(battleState.boss,12));
     const q=battleState.bossPool[battleState.bossQIdx++];
     battleState.currentQuestion=q;
     battleState.timeLeft=ANSWER_TIME;
     document.getElementById('mathQuestion').textContent=q.q;
-    grid.innerHTML=q.opts.map(c=>`<button class="choice-btn" data-value="${c}" onclick="submitChoice(${c},this)">${c}</button>`).join('');
+    grid.innerHTML=q.opts.map((c,i)=>`<button class="choice-btn" data-value="${i}" onclick="submitChoice(${i},this)">${c}</button>`).join('');
   }else{
   battleState.currentQuestion=generateQuestion(level);
   battleState.timeLeft=ANSWER_TIME;
@@ -1087,16 +1255,26 @@ function submitChoice(value,btn){
 
 function handleAnswer(isCorrect){
   const g=battleGen;
+  if(battleState.boss&&BOSSES[battleState.boss].sleep)battleState.rounds++;
   if(isCorrect){
     showMsg('✅ 答對了！','good');
     if(battleState.boss){
-      // Boss: 每答對 1 題扣 1 血, 無暴擊/屬性 (9 連對即勝)
+      // Boss: 答對扣血; 卡比獸睡著時暴擊(+2點) + 格鬥系克制暴擊(+2點); 機械超夢固定 1 點
+      const bc=BOSSES[battleState.boss];
       setTimeout(()=>{
         if(battleGen!==g)return;
         sfxHit();
         const b=battleState.enemyTeam[0];
-        b.currentHp=Math.max(0,b.currentHp-1);
-        renderHearts('enemyHearts',b.currentHp,9);
+        let dmg=1,isCrit=false;
+        if(bc.sleep){
+          if(b.isSleeping){dmg+=2;isCrit=true}
+          const pPoke=battleState.playerTeam[battleState.playerIndex];
+          if(isSuperEffective(pPoke.types,b.types)&&Math.random()<.3){dmg+=2;isCrit=true}
+        }
+        b.currentHp=Math.max(0,b.currentHp-dmg);
+        if(bc.sleep&&b.isSleeping){b.isSleeping=false;b.sleepDuration=0;updateSleepUI()}
+        renderHearts('enemyHearts',b.currentHp,b.maxHp,bc.half);
+        if(isCrit)showMsg('💥 暴擊！','crit');
         document.getElementById('enemyImg').classList.add('hit');
         setTimeout(()=>document.getElementById('enemyImg').classList.remove('hit'),500);
         renderTeamBars();
@@ -1130,6 +1308,13 @@ function handleAnswer(isCorrect){
       },300);
     },400);
   }else{
+    const bc=battleState.boss?BOSSES[battleState.boss]:null;
+    if(bc&&bc.sleep&&battleState.enemyTeam[0].isSleeping){
+      // 卡比獸睡著: 唔會攻擊玩家, 答錯都冇事 (睡眠係雙面刃)
+      showMsg('😴 卡比獸睡著了，沒有攻擊！','good');
+      setTimeout(()=>{if(battleGen!==g)return;hideMsg();nextQuestion()},800);
+      return;
+    }
     showMsg(`❌ 答錯了！`,'bad');
     setTimeout(()=>{if(battleGen!==g)return;handleEnemyAttack()},800);
   }
@@ -1142,7 +1327,53 @@ function handleTimeout(){
   updateProgress();
   sfxWrong();
   showMsg(`⏰ 時間到！`,'bad');
+  if(battleState.boss&&BOSSES[battleState.boss].sleep){
+    battleState.rounds++;
+    if(battleState.enemyTeam[0].isSleeping){
+      showMsg('😴 卡比獸睡著了，沒有攻擊！','good');
+      setTimeout(()=>{if(battleGen!==g)return;hideMsg();nextQuestion()},800);
+      return;
+    }
+  }
   setTimeout(()=>{if(battleGen!==g)return;handleEnemyAttack()},800);
+}
+
+// ===== 武裝卡比獸睡眠機制 (建議書 v1.0) =====
+// 每回合(每答一題)+10s; 累積滿 45s → 入睡回 2 點(上限24), 睡 8s; 玩家答啱攻擊=2點暴擊+驚醒; 睡著時答錯/逾時唔會被攻擊
+function endTurn(){
+  const bc=BOSSES[battleState.boss],b=battleState.enemyTeam[0];
+  if(b.isSleeping){
+    b.sleepDuration-=bc.sleep.turn;
+    if(b.sleepDuration<=0){b.isSleeping=false;b.sleepTimer=0}
+  }else{
+    b.sleepTimer+=bc.sleep.turn;
+    if(b.sleepTimer>=bc.sleep.interval){
+      b.sleepTimer=0;b.isSleeping=true;b.sleepDuration=bc.sleep.length;
+      const healed=Math.min(b.maxHp,b.currentHp+bc.sleep.heal)-b.currentHp;
+      b.currentHp+=healed;
+      renderHearts('enemyHearts',b.currentHp,b.maxHp,bc.half);
+      renderTeamBars();
+      if(battleState.rounds>1)showMsg(`😴 卡比獸睡著了！${healed>0?'回血 '+healed+' 點':'但血量已滿'}！答對暴擊！`,'crit');
+      const z=document.getElementById('zzz');
+      if(z){z.classList.add('show');z.classList.toggle('nofill',healed===0)}
+    }
+  }
+  updateSleepBar();
+}
+function updateSleepUI(){
+  // 玩家攻擊驚醒卡比獸 → 隱藏 Zzz, 進度條歸零
+  const z=document.getElementById('zzz');
+  if(z)z.classList.remove('show','nofill');
+  updateSleepBar();
+}
+function updateSleepBar(){
+  const f=document.getElementById('sleepFill');
+  if(!f)return;
+  const bc=BOSSES[battleState.boss],b=battleState.enemyTeam[0];
+  if(b.isSleeping){f.style.width='100%';f.style.background='#f87171';return}
+  const r=Math.min(1,b.sleepTimer/bc.sleep.interval);
+  f.style.width=(r*100)+'%';
+  f.style.background=r>.66?'#f87171':r>.33?'#facc15':'#4ade80';  // 綠→黃→紅, 就快瞓著變紅
 }
 
 function handleEnemyAttack(){
@@ -1252,17 +1483,18 @@ function endBattle(result){
   let title='',subtitle='',isWin=false;
   if(result==='victory'){
     if(battleState.boss){
-      title='🏆 機械超夢討伐成功！';subtitle='答對 9 題，完美壓制機械超夢！';
+      const bc=BOSSES[battleState.boss];
+      title=bc.title;subtitle=bc.subtitle;
     }else{
       title='🏆 道館挑戰成功！';subtitle='太厲害了！你擊敗了館主！';
     }
-    isWin=true;battleState.coinsEarned+=3;
+    isWin=true;battleState.coinsEarned+=battleState.boss?BOSSES[battleState.boss].coins:3;
     gymState.totalWins++;
     gymState.bestStreak=Math.max(gymState.bestStreak,battleState.bestStreak);
     if(!battleState.boss)gymState.bestKOs=Math.max(gymState.bestKOs,battleState.enemyIndex);
     sfxVictory();
   }else if(result==='defeat'){
-    title=battleState.boss?'💀 機械超夢太強了...':'💀 挑戰失敗...';
+    title=battleState.boss?BOSSES[battleState.boss].defeat:'💀 挑戰失敗...';
     subtitle='不要氣餒，再試一次吧！';
     sfxDefeat();
   }else{
