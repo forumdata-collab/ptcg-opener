@@ -1210,11 +1210,15 @@ function nextQuestion(){
 
   updateTimerDisplay();
   if(timerInterval)clearInterval(timerInterval);
+  // 2026-09-28 audit: 之前係 tick 計數 (每 100ms -0.1s) — 瀏覽器後台分頁會將
+  // interval 節流到 ~1s，玩家實際拎到 10 倍作答時間 (唔公平) 。改為 deadline
+  // 計時：只以 Date.now() 為準，interval 只負責每秒重繪，與節流無關。
+  battleState.deadline=Date.now()+battleState.timeLeft*1000;
   timerInterval=setInterval(()=>{
-    battleState.timeLeft-=0.1;
+    battleState.timeLeft=(battleState.deadline-Date.now())/1000;
     updateTimerDisplay();
     if(battleState.timeLeft<=0){clearInterval(timerInterval);handleTimeout()}
-  },100);
+  },1000);
 
   updateProgress();
   updateReviveButton();

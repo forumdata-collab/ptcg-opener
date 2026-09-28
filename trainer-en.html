@@ -1203,7 +1203,9 @@ function burstFx(cardEl, n){
   setTimeout(()=>b.remove(), 1400);
 }
 
-const IMG_PROXY = 'https://hermesagent.de5.net:2096/ptcg-img';
+// 2026-09-28 audit: IMG_PROXY 指去 VM (hermesagent.de5.net:2096 = LiveTV port)
+// 違反「公開 Pages 唔好放 VM live link/domain」。直連 pokemon-card.com 對 <img>
+// 冇 CORS 限制 (實測 200 image/png)，proxy fallback 移除，直接落到剪影。
 function fallbackImg(el, name){
   const src = el.getAttribute('src') || '';
   // 1) pkmncards 圖失敗 → TCGdex 圖
@@ -1216,12 +1218,6 @@ function fallbackImg(el, name){
   if(src.startsWith('https://assets.tcgdex.net') && el.dataset.tw && !el.dataset.twTried){
     el.dataset.twTried = '1';
     el.src = el.dataset.tw;
-    return;
-  }
-  // 3) TW 原圖失敗 → proxy
-  if(src.startsWith('https://asia.pokemon-card.com') && !el.dataset.proxied){
-    el.dataset.proxied = '1';
-    el.src = IMG_PROXY + src.replace('https://asia.pokemon-card.com', '');
     return;
   }
   // 4) 全部失敗 → 寶可夢球剪影 + 名稱
