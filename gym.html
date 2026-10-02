@@ -1242,10 +1242,12 @@ function submitChoice(value,btn){
     battleState.streak++;
     battleState.bestStreak=Math.max(battleState.bestStreak,battleState.streak);
     btn.classList.add('correct');
+    showMsg(battleState.streak>=3?`🔥 連擊 x${battleState.streak}！答對了！`:'✅ 答對了！','good');
     sfxCorrect();
   }else{
     battleState.streak=0;
     btn.classList.add('wrong');
+    showMsg('❌ 答錯了！紅色顯示正確答案，再試一次。','bad');
     // Highlight correct answer
     document.querySelectorAll('.choice-btn').forEach(b=>{
       if(parseInt(b.dataset.value)===battleState.currentQuestion.a)b.classList.add('correct');
@@ -1261,9 +1263,9 @@ function handleAnswer(isCorrect){
   const g=battleGen;
   if(battleState.boss&&BOSSES[battleState.boss].sleep)battleState.rounds++;
   if(isCorrect){
-    showMsg('✅ 答對了！','good');
+    if(!battleState.boss)showMsg(`⚔️ ${battleState.playerTeam[battleState.playerIndex].zh||'你的寶可夢'} 出擊！`,'info');
     if(battleState.boss){
-      // Boss: 答對扣血; 卡比獸睡著時暴擊(+2點) + 格鬥系克制暴擊(+2點); 機械超夢固定 1 點
+      // Boss: correct-answer confirmation is shown in submitChoice. Keep the boss hit as the single follow-up event.
       const bc=BOSSES[battleState.boss];
       setTimeout(()=>{
         if(battleGen!==g)return;
@@ -1279,6 +1281,7 @@ function handleAnswer(isCorrect){
         if(bc.sleep&&b.isSleeping){b.isSleeping=false;b.sleepDuration=0;updateSleepUI()}
         renderHearts('enemyHearts',b.currentHp,b.maxHp,bc.half);
         if(isCrit)showMsg('💥 暴擊！','crit');
+        else showMsg(`⚔️ ${pPoke.zh||'你的寶可夢'} 攻擊！-${dmg} HP`,'good');
         document.getElementById('enemyImg').classList.add('hit');
         setTimeout(()=>document.getElementById('enemyImg').classList.remove('hit'),500);
         renderTeamBars();
@@ -1306,6 +1309,7 @@ function handleAnswer(isCorrect){
         if(dmg>=2)eImg.classList.add('knockback');
         setTimeout(()=>eImg.classList.remove('hit','knockback'),500);
         if(isCrit)showMsg(`💥 暴擊！屬性有利！`,'crit');
+        else showMsg(`⚔️ ${pPoke.zh||'你的寶可夢'} 攻擊！-${dmg} HP`,'good');
         renderTeamBars();
         if(ePoke.currentHp<=0){setTimeout(()=>{if(battleGen===g)handleEnemyFainted()},800)}
         else{setTimeout(()=>{if(battleGen!==g)return;hideMsg();nextQuestion()},1200)}
@@ -1330,7 +1334,7 @@ function handleTimeout(){
   battleState.streak=0;
   updateProgress();
   sfxWrong();
-  showMsg(`⏰ 時間到！`,'bad');
+    showMsg(`⏰ 時間到！${battleState.currentQuestion.q} 正確答案：${battleState.currentQuestion.a}`,'bad');
   if(battleState.boss&&BOSSES[battleState.boss].sleep){
     battleState.rounds++;
     if(battleState.enemyTeam[0].isSleeping){
